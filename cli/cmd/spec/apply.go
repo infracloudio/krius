@@ -6,12 +6,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// installCmd represents the install command
 var applyCmd = &cobra.Command{
 	Use:   "apply",
-	Short: "Applys the specified profile",
+	Short: "Applies/Updates the give profie file",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Apply the spec")
+		fmt.Println("Need to implement apply profile on multicluster")
 	},
 }
 
