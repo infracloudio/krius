@@ -1,0 +1,48 @@
+before:
+  hooks:
+    - go mod download
+builds:
+- id: krius
+  binary: krius
+  main: cli/main.go
+  ldflags: &ldflags
+  - -s -w
+    -X github.com/infracloudio/krius/pkg/version.VERSION={{.Tag}}
+    -X github.com/infracloudio/krius/pkg/version.GIT_COMMIT_ID={{.Commit}}
+    -X github.com/infracloudio/krius/pkg/version.BUILD_DATE={{.Date}}
+  env:
+  - CGO_ENABLED=0
+  goos:
+    - linux
+    - darwin
+    - windows
+  goarch:
+    - 386
+    - amd64
+    - arm
+    - arm64
+archives:
+- replacements:
+    darwin: Darwin
+    linux: Linux
+    windows: Windows
+    386: i386
+    amd64: x86_64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+# temporary workaround to distribute binaries
+release:
+  github:
+    owner: infracloudio
+    name: krius-release
+  draft: true
+  prerelease: auto
+  disable: false

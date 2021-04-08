@@ -16,6 +16,12 @@ var installCmd = &cobra.Command{
 	Run:   helmInstall,
 }
 
+var uninstallCmd = &cobra.Command{
+	Use:   "uninstall",
+	Short: "Delete the installed stack",
+	Run:   helmUninstall,
+}
+
 var thanosCmd = &cobra.Command{
 	Use:   "thanos",
 	Short: "Install thanos component",
@@ -25,6 +31,7 @@ var thanosCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(installCmd)
+	RootCmd.AddCommand(uninstallCmd)
 	installCmd.AddCommand(thanosCmd)
 }
 
@@ -39,6 +46,16 @@ func helmInstall(cmd *cobra.Command, args []string) {
 	out, err := install.CombinedOutput()
 	if err != nil {
 		fmt.Printf("could not install The Observability Stack: %w \nOutput: %v", err, string(out))
+	}
+}
+
+func helmUninstall(cmd *cobra.Command, args []string) {
+	//TODO: need to remove hardcoded values
+	uninstall := exec.Command("helm", "delete", "my-release")
+	fmt.Println("Deleting the Prometheus stack")
+	out, err := uninstall.CombinedOutput()
+	if err != nil {
+		fmt.Printf("could not uninstall The Observability Stack: %w \nOutput: %v", err, string(out))
 	}
 }
 
