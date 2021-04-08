@@ -9,7 +9,7 @@ import (
 
 var uninstallCmd = &cobra.Command{
 	Use:   "uninstall",
-	Short: "Delete the installed stack",
+	Short: "Deletes the installed stack",
 	Run:   helmUninstall,
 }
 
