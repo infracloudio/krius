@@ -9,7 +9,7 @@ import (
 var PATH_TO_KRIUS = "./../../bin/krius"
 
 func TestInstall(t *testing.T) {
-	cmds := []string{"install", "bitnami/kube-prometheus"}
+	cmds := []string{"install", "Prometheus", "prom"}
 
 	t.Logf("Running '%v'", "krius "+strings.Join(cmds, " "))
 	install := exec.Command("krius", cmds...)

@@ -7,7 +7,7 @@ import (
 )
 
 func TestUninstall(t *testing.T) {
-	cmds := []string{"uninstall"}
+	cmds := []string{"uninstall", "prom"}
 
 	t.Logf("Running '%v'", "krius "+strings.Join(cmds, " "))
 	install := exec.Command("krius", cmds...)

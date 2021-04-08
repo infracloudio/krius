@@ -1,0 +1,39 @@
+objstoreConfig: |-
+  type: s3
+  config:
+    bucket: thanos
+    endpoint: {{ include "thanos.minio.fullname" . }}.monitoring.svc.cluster.local:9000
+    access_key: minio
+    secret_key: minio123
+    insecure: true
+query:
+  dnsDiscovery:
+    sidecarsService: kube-prometheus-prometheus-thanos
+    sidecarsNamespace: monitoring
+bucketweb:
+  enabled: true
+compactor:
+  enabled: true
+storegateway:
+  enabled: true
+ruler:
+  enabled: true
+  alertmanagers:
+    - http://kube-prometheus-alertmanager.monitoring.svc.cluster.local:9093
+  config: |-
+    groups:
+      - name: "metamonitoring"
+        rules:
+          - alert: "PrometheusDown"
+            expr: absent(up{prometheus="monitoring/kube-prometheus"})
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+minio:
+  enabled: true
+  accessKey:
+    password: "minio"
+  secretKey:
+    password: "minio123"
+  defaultBuckets: "thanos"

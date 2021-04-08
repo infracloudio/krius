@@ -8,7 +8,7 @@ import (
 )
 
 var uninstallCmd = &cobra.Command{
-	Use:   "uninstall",
+	Use:   "uninstall [Name]",
 	Short: "Deletes the installed stack",
 	Run:   helmUninstall,
 }
@@ -18,11 +18,21 @@ func init() {
 }
 
 func helmUninstall(cmd *cobra.Command, args []string) {
-	//TODO: need to remove hardcoded values
-	uninstall := exec.Command("helm", "delete", "my-release")
+	releasename := ""
+	if len(args) > 0 {
+		releasename = args[0]
+	}
+	cmds := []string{"delete", releasename}
+	namespace, err := cmd.Flags().GetString("namespace")
+	if namespace == "" {
+		namespace = "default"
+	}
+	cmds = append(cmds, "--create-namespace", "--namespace", namespace)
+	uninstall := exec.Command("helm", cmds...)
+
 	fmt.Println("Deleting the Prometheus stack")
 	out, err := uninstall.CombinedOutput()
 	if err != nil {
-		fmt.Printf("could not uninstall The Observability Stack: %w \nOutput: %v", err, string(out))
+		fmt.Printf("could not uninstall The Observability Stack: %s \nOutput: %s", err.Error(), string(out))
 	}
 }
