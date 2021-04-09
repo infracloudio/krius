@@ -1,0 +1,8 @@
+prometheus:
+  repo: bitnami
+  chart: kube-prometheus
+  url: https://charts.bitnami.com/bitnami
+thanos:
+  repo: bitnami
+  chart: kube-prometheus
+  url: https://charts.bitnami.com/bitnami
