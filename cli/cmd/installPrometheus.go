@@ -2,12 +2,16 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os/exec"
 
 	"github.com/infracloudio/krius/pkg/helm"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+)
+
+const (
+	PROMETHEUS_CHART_REPO = "prometheus-community"
+	PROMETHEUS_CHART      = "kube-prometheus-stack"
+	PROMETHEUS_CHART_URL  = "https://prometheus-community.github.io/helm-charts"
 )
 
 var prometheusCmd = &cobra.Command{
@@ -22,28 +26,14 @@ func init() {
 }
 
 func prometheusInstall(cmd *cobra.Command, args []string) {
-	promRepo, ok := viper.Get("prometheus.repo").(string)
-	if !ok {
-		log.Fatalf("Invalid prometheus repo name")
-	}
 
-	promUrl, ok := viper.Get("prometheus.url").(string)
-	if !ok {
-		log.Fatalf("Invalid prometheus url")
-	}
-
-	promChart, ok := viper.Get("prometheus.chart").(string)
-	if !ok {
-		log.Fatalf("Invalid prometheus chart name")
-	}
-
-	helm.HelmRepoAdd(promRepo, promUrl)
+	helm.HelmRepoAdd(PROMETHEUS_CHART_REPO, PROMETHEUS_CHART_URL)
 
 	releasename := "--generate-name"
 	if len(args) > 0 {
 		releasename = args[0]
 	}
-	cmds := []string{"install", releasename, promRepo + "/" + promChart}
+	cmds := []string{"install", releasename, PROMETHEUS_CHART_REPO + "/" + PROMETHEUS_CHART}
 	namespace, err := cmd.Flags().GetString("namespace")
 	if namespace == "" {
 		namespace = "default"

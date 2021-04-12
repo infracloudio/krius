@@ -2,13 +2,17 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os/exec"
 	"strings"
 
 	"github.com/infracloudio/krius/pkg/helm"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+)
+
+const (
+	THANOS_CHART_REPO = "bitnami"
+	THANOS_CHART      = "kube-prometheus"
+	THANOS_CHART_URL  = "https://charts.bitnami.com/bitnami"
 )
 
 var thanosCmd = &cobra.Command{
@@ -24,25 +28,11 @@ func init() {
 }
 
 func thanosInstall(cmd *cobra.Command, args []string) {
-	thanosRepo, ok := viper.Get("thanos.repo").(string)
-	if !ok {
-		log.Fatalf("Invalid thanos repo name")
-	}
 
-	thanosRepoUrl, ok := viper.Get("thanos.url").(string)
-	if !ok {
-		log.Fatalf("Invalid thanos url")
-	}
-
-	thanosChart, ok := viper.Get("thanos.chart").(string)
-	if !ok {
-		log.Fatalf("Invalid thanos chart name")
-	}
-
-	helm.HelmRepoAdd(thanosRepo, thanosRepoUrl)
+	helm.HelmRepoAdd(THANOS_CHART_REPO, THANOS_CHART_URL)
 	if strings.ToLower(args[0]) == "sidecar" {
 		releasename := args[1]
-		cmds := []string{"upgrade", releasename, thanosRepo + "/" + thanosChart}
+		cmds := []string{"upgrade", releasename, THANOS_CHART_REPO + "/" + THANOS_CHART}
 		cmds = append(cmds, "--set", "prometheus.thanos.create=true")
 		namespace, err := cmd.Flags().GetString("namespace")
 		if namespace == "" {
