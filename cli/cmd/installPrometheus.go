@@ -22,7 +22,7 @@ var prometheusCmd = &cobra.Command{
 
 func init() {
 	installCmd.AddCommand(prometheusCmd)
-	helm.AddInstallFlags(prometheusCmd)
+	addInstallFlags(prometheusCmd)
 }
 
 func prometheusInstall(cmd *cobra.Command, args []string) {
@@ -40,8 +40,6 @@ func prometheusInstall(cmd *cobra.Command, args []string) {
 	if !ok {
 		log.Fatalf("Invalid prometheus chart name")
 	}
-
-	helm.HelmRepoAdd(promRepo, promUrl)
 	releaseName := "--generate-name"
 	if len(args) > 0 {
 		releaseName = args[0]
@@ -55,15 +53,27 @@ func prometheusInstall(cmd *cobra.Command, args []string) {
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), os.Getenv("HELM_DRIVER"), debug); err != nil {
 		log.Fatal(err)
+		return
 	}
 	client := action.NewInstall(actionConfig)
 	helmClient := helm.HelmClient{
 		RepoName:    promRepo,
+		Url:         promUrl,
 		ReleaseName: releaseName,
 		Namespace:   namespace,
 		ChartName:   promChart,
 		Client:      client,
 		Settings:    settings,
+	}
+	err = helmClient.AddRepo()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	err = helmClient.UpdateRepo()
+	if err != nil {
+		log.Fatal(err)
+		return
 	}
 	fmt.Println("Installing the Prometheus stack")
 	result, err := helmClient.InstallOrUpgradeChart()
