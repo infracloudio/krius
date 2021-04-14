@@ -209,3 +209,13 @@ func debug(format string, v ...interface{}) {
 	format = fmt.Sprintf("[debug] %s\n", format)
 	log.Output(2, fmt.Sprintf(format, v...))
 }
+
+func InitializeHelmAction(settings *cli.EnvSettings) (*action.Install, error) {
+	actionConfig := new(action.Configuration)
+	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(),
+		os.Getenv("HELM_DRIVER"), debug); err != nil {
+		return nil, err
+	}
+	client := action.NewInstall(actionConfig)
+	return client, nil
+}

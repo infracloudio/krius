@@ -7,7 +7,6 @@ import (
 
 	"github.com/infracloudio/krius/pkg/helm"
 	"github.com/spf13/cobra"
-	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
 )
 
@@ -41,14 +40,12 @@ func prometheusInstall(cmd *cobra.Command, args []string) {
 	}
 	os.Setenv("HELM_NAMESPACE", namespace)
 	settings = cli.New()
-	//TODO: This initialization of client can be moved at common place and can be used every where
-	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(),
-		os.Getenv("HELM_DRIVER"), debug); err != nil {
+
+	client, err := helm.InitializeHelmAction(settings)
+	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	client := action.NewInstall(actionConfig)
 	helmClient := helm.HelmClient{
 		RepoName:    PROMETHEUS_CHART_REPO,
 		Url:         PROMETHEUS_CHART_URL,
