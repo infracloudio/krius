@@ -41,8 +41,10 @@ func prometheusInstall(cmd *cobra.Command, args []string) {
 	}
 	os.Setenv("HELM_NAMESPACE", namespace)
 	settings = cli.New()
+	//TODO: This initialization of client can be moved at common place and can be used every where
 	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), os.Getenv("HELM_DRIVER"), debug); err != nil {
+	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(),
+		os.Getenv("HELM_DRIVER"), debug); err != nil {
 		log.Fatal(err)
 		return
 	}
