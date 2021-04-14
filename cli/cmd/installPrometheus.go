@@ -7,13 +7,8 @@ import (
 
 	"github.com/infracloudio/krius/pkg/helm"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
-	"os/exec"
-
-	"github.com/infracloudio/krius/pkg/helm"
-	"github.com/spf13/cobra"
 )
 
 const (
@@ -43,17 +38,21 @@ func prometheusInstall(cmd *cobra.Command, args []string) {
 	namespace, err := cmd.Flags().GetString("namespace")
 	if err != nil {
 		namespace = "default"
+	}
+	os.Setenv("HELM_NAMESPACE", namespace)
+	settings = cli.New()
+	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), os.Getenv("HELM_DRIVER"), debug); err != nil {
 		log.Fatal(err)
 		return
 	}
 	client := action.NewInstall(actionConfig)
 	helmClient := helm.HelmClient{
-		RepoName:    promRepo,
-		Url:         promUrl,
+		RepoName:    PROMETHEUS_CHART_REPO,
+		Url:         PROMETHEUS_CHART_URL,
 		ReleaseName: releaseName,
 		Namespace:   namespace,
-		ChartName:   promChart,
+		ChartName:   PROMETHEUS_CHART,
 		Client:      client,
 		Settings:    settings,
 	}
