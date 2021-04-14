@@ -10,6 +10,16 @@ import (
 	"github.com/spf13/viper"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
+	"os/exec"
+
+	"github.com/infracloudio/krius/pkg/helm"
+	"github.com/spf13/cobra"
+)
+
+const (
+	PROMETHEUS_CHART_REPO = "prometheus-community"
+	PROMETHEUS_CHART      = "kube-prometheus-stack"
+	PROMETHEUS_CHART_URL  = "https://prometheus-community.github.io/helm-charts"
 )
 
 var settings *cli.EnvSettings
@@ -26,20 +36,6 @@ func init() {
 }
 
 func prometheusInstall(cmd *cobra.Command, args []string) {
-	promRepo, ok := viper.Get("prometheus.repo").(string)
-	if !ok {
-		log.Fatalf("Invalid prometheus repo name")
-	}
-
-	promUrl, ok := viper.Get("prometheus.url").(string)
-	if !ok {
-		log.Fatalf("Invalid prometheus url")
-	}
-
-	promChart, ok := viper.Get("prometheus.chart").(string)
-	if !ok {
-		log.Fatalf("Invalid prometheus chart name")
-	}
 	releaseName := "--generate-name"
 	if len(args) > 0 {
 		releaseName = args[0]
@@ -47,10 +43,6 @@ func prometheusInstall(cmd *cobra.Command, args []string) {
 	namespace, err := cmd.Flags().GetString("namespace")
 	if err != nil {
 		namespace = "default"
-	}
-	os.Setenv("HELM_NAMESPACE", namespace)
-	settings = cli.New()
-	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), os.Getenv("HELM_DRIVER"), debug); err != nil {
 		log.Fatal(err)
 		return
