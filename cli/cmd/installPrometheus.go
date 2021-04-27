@@ -3,20 +3,9 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"os"
 
-	"github.com/infracloudio/krius/pkg/helm"
 	"github.com/spf13/cobra"
-	"helm.sh/helm/v3/pkg/cli"
 )
-
-const (
-	PROMETHEUS_CHART_REPO = "prometheus-community"
-	PROMETHEUS_CHART      = "kube-prometheus-stack"
-	PROMETHEUS_CHART_URL  = "https://prometheus-community.github.io/helm-charts"
-)
-
-var settings *cli.EnvSettings
 
 var prometheusCmd = &cobra.Command{
 	Use:   "prometheus [Name]",
@@ -30,47 +19,18 @@ func init() {
 }
 
 func prometheusInstall(cmd *cobra.Command, args []string) {
-	releaseName := "--generate-name"
-	if len(args) > 0 {
-		releaseName = args[0]
-	}
-	namespace, err := cmd.Flags().GetString("namespace")
-	if err != nil {
-		namespace = "default"
-	}
-	os.Setenv("HELM_NAMESPACE", namespace)
-	settings = cli.New()
 
-	client, err := helm.InitializeHelmAction(settings)
+	chartConfiguration := &ChartConfig{
+		CHART_REPO: "prometheus-community",
+		CHART_NAME: "kube-prometheus-stack",
+		CHART_URL:  "https://prometheus-community.github.io/helm-charts",
+	}
+
+	helmClient, err := createHelmClientObject(cmd, args, chartConfiguration)
 	if err != nil {
 		log.Fatal(err)
-		return
 	}
-	helmClient := helm.HelmClient{
-		RepoName:    PROMETHEUS_CHART_REPO,
-		Url:         PROMETHEUS_CHART_URL,
-		ReleaseName: releaseName,
-		Namespace:   namespace,
-		ChartName:   PROMETHEUS_CHART,
-		Client:      client,
-		Settings:    settings,
-	}
-	err = helmClient.AddRepo()
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	err = helmClient.UpdateRepo()
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	fmt.Println("Installing the Prometheus stack")
-	result, err := helmClient.InstallOrUpgradeChart()
-	if err != nil {
-		fmt.Printf("could not install The Observability Stack %s", err)
-	}
-	fmt.Println(*result)
+	addAndInstallChart(helmClient)
 }
 
 func debug(format string, v ...interface{}) {

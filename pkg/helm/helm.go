@@ -137,7 +137,14 @@ func (c *HelmClient) InstallOrUpgradeChart() (*string, error) {
 		c.Client.Version = ">0.0.0-0"
 	}
 
-	c.Client.ReleaseName = c.ReleaseName
+	if c.ReleaseName != "" {
+		c.Client.ReleaseName = c.ReleaseName
+	}
+
+	// Generate Random name for the release
+	c.Client.GenerateName = true
+	c.Client.ReleaseName, _, _ = c.Client.NameAndChart([]string{c.ChartName})
+
 	cp, err := c.Client.ChartPathOptions.LocateChart(fmt.Sprintf("%s/%s", c.RepoName, c.ChartName), c.Settings)
 	if err != nil {
 		return nil, err

@@ -2,20 +2,21 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
-)
 
-const (
-	THANOS_CHART_REPO = "bitnami"
-	THANOS_CHART      = "kube-prometheus"
-	THANOS_CHART_URL  = "https://charts.bitnami.com/bitnami"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 )
 
 var thanosCmd = &cobra.Command{
 	Use:   "thanos",
 	Short: "Install thanos component",
-	Args:  cobra.MinimumNArgs(1),
-	Run:   thanosInstall,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 1 {
+			return errors.New("Missing argument to configure thanos as: sidecar, receiver\n\n For example: krius install thanos sidecar\n")
+		}
+		return nil
+	},
+	Run: thanosInstall,
 }
 
 func init() {
@@ -24,5 +25,10 @@ func init() {
 }
 
 func thanosInstall(cmd *cobra.Command, args []string) {
-	fmt.Printf("Need to implement thanos %s, %s and %s", THANOS_CHART, THANOS_CHART_REPO, THANOS_CHART_URL)
+	chartConfiguration := &ChartConfig{
+		CHART_REPO: "bitnami",
+		CHART_NAME: "thanos",
+		CHART_URL:  "https://charts.bitnami.com/bitnami",
+	}
+	fmt.Printf("Need to implement thanos %s, %s and %s", chartConfiguration.CHART_NAME, chartConfiguration.CHART_REPO, chartConfiguration.CHART_URL)
 }
