@@ -2,16 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"os/exec"
+	"log"
 
-	"github.com/infracloudio/krius/pkg/helm"
 	"github.com/spf13/cobra"
-)
-
-const (
-	PROMETHEUS_CHART_REPO = "prometheus-community"
-	PROMETHEUS_CHART      = "kube-prometheus-stack"
-	PROMETHEUS_CHART_URL  = "https://prometheus-community.github.io/helm-charts"
 )
 
 var prometheusCmd = &cobra.Command{
@@ -22,27 +15,25 @@ var prometheusCmd = &cobra.Command{
 
 func init() {
 	installCmd.AddCommand(prometheusCmd)
-	helm.AddInstallFlags(prometheusCmd)
+	addInstallFlags(prometheusCmd)
 }
 
 func prometheusInstall(cmd *cobra.Command, args []string) {
 
-	helm.HelmRepoAdd(PROMETHEUS_CHART_REPO, PROMETHEUS_CHART_URL)
+	chartConfiguration := &ChartConfig{
+		CHART_REPO: "prometheus-community",
+		CHART_NAME: "kube-prometheus-stack",
+		CHART_URL:  "https://prometheus-community.github.io/helm-charts",
+	}
 
-	releasename := "--generate-name"
-	if len(args) > 0 {
-		releasename = args[0]
-	}
-	cmds := []string{"install", releasename, PROMETHEUS_CHART_REPO + "/" + PROMETHEUS_CHART}
-	namespace, err := cmd.Flags().GetString("namespace")
-	if namespace == "" {
-		namespace = "default"
-	}
-	cmds = append(cmds, "--create-namespace", "--namespace", namespace)
-	install := exec.Command("helm", cmds...)
-	fmt.Println("Installing the Prometheus stack")
-	out, err := install.CombinedOutput()
+	helmClient, err := createHelmClientObject(cmd, args, chartConfiguration)
 	if err != nil {
-		fmt.Printf("could not install The Observability Stack: %s \nOutput: %v", err.Error(), string(out))
+		log.Fatal(err)
 	}
+	addAndInstallChart(helmClient)
+}
+
+func debug(format string, v ...interface{}) {
+	format = fmt.Sprintf("[debug] %s\n", format)
+	log.Output(2, fmt.Sprintf(format, v...))
 }

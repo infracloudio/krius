@@ -2,53 +2,33 @@ package cmd
 
 import (
 	"fmt"
-	"os/exec"
-	"strings"
 
-	"github.com/infracloudio/krius/pkg/helm"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-)
-
-const (
-	THANOS_CHART_REPO = "bitnami"
-	THANOS_CHART      = "kube-prometheus"
-	THANOS_CHART_URL  = "https://charts.bitnami.com/bitnami"
 )
 
 var thanosCmd = &cobra.Command{
 	Use:   "thanos",
 	Short: "Install thanos component",
-	Args:  cobra.MinimumNArgs(1),
-	Run:   thanosInstall,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 1 {
+			return errors.New("Missing argument to configure thanos as: sidecar, receiver\n\n For example: krius install thanos sidecar\n")
+		}
+		return nil
+	},
+	Run: thanosInstall,
 }
 
 func init() {
 	installCmd.AddCommand(thanosCmd)
-	helm.AddInstallFlags(thanosCmd)
+	addInstallFlags(thanosCmd)
 }
 
 func thanosInstall(cmd *cobra.Command, args []string) {
-
-	helm.HelmRepoAdd(THANOS_CHART_REPO, THANOS_CHART_URL)
-	if strings.ToLower(args[0]) == "sidecar" {
-		releasename := args[1]
-		cmds := []string{"upgrade", releasename, THANOS_CHART_REPO + "/" + THANOS_CHART}
-		cmds = append(cmds, "--set", "prometheus.thanos.create=true")
-		namespace, err := cmd.Flags().GetString("namespace")
-		if namespace == "" {
-			namespace = "default"
-		}
-		cmds = append(cmds, "--namespace", namespace)
-
-		install := exec.Command("helm", cmds...)
-		fmt.Printf("Installing Thanos %s", args[0])
-		out, err := install.CombinedOutput()
-		if err != nil {
-			fmt.Printf("could not install Thanos : %s \nOutput: %v", args[0], string(out))
-		}
-	} else {
-		if strings.ToLower(args[0]) == "receiver" {
-			fmt.Println("Need to implement thanos receiver")
-		}
+	chartConfiguration := &ChartConfig{
+		CHART_REPO: "bitnami",
+		CHART_NAME: "thanos",
+		CHART_URL:  "https://charts.bitnami.com/bitnami",
 	}
+	fmt.Printf("Need to implement thanos %s, %s and %s", chartConfiguration.CHART_NAME, chartConfiguration.CHART_REPO, chartConfiguration.CHART_URL)
 }
