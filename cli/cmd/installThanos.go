@@ -25,10 +25,10 @@ func init() {
 }
 
 func thanosInstall(cmd *cobra.Command, args []string) {
-	chartConfiguration := &ChartConfig{
-		CHART_REPO: "bitnami",
-		CHART_NAME: "thanos",
-		CHART_URL:  "https://charts.bitnami.com/bitnami",
+	helmConfiguration := &helmConfig{
+		repo: "bitnami",
+		name: "thanos",
+		url:  "https://charts.bitnami.com/bitnami",
 	}
-	fmt.Printf("Need to implement thanos %s, %s and %s", chartConfiguration.CHART_NAME, chartConfiguration.CHART_REPO, chartConfiguration.CHART_URL)
+	fmt.Printf("Need to implement thanos %s, %s and %s", helmConfiguration.name, helmConfiguration.repo, helmConfiguration.url)
 }
