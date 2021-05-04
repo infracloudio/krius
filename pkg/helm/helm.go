@@ -27,14 +27,16 @@ import (
 )
 
 type HelmClient struct {
-	Url         string
-	RepoName    string
-	ChartName   string
-	ReleaseName string
-	Namespace   string
-	Args        map[string]string
-	Client      *action.Install
-	Settings    *cli.EnvSettings
+	Url           string
+	RepoName      string
+	ChartName     string
+	ReleaseName   string
+	Namespace     string
+	Args          map[string]string
+	Client        *action.Install
+	Settings      *cli.EnvSettings
+	ClientUpgrade *action.Upgrade
+	ConfigFile    string
 }
 
 // AddRepo adds repo with given name and url
@@ -204,6 +206,50 @@ func (c *HelmClient) InstallOrUpgradeChart() (*string, error) {
 	return &release.Manifest, nil
 }
 
+func (c *HelmClient) UpgradeChartValues() (*string, error) {
+	if c.ClientUpgrade.Version == "" && c.ClientUpgrade.Devel {
+		c.ClientUpgrade.Version = ">0.0.0-0"
+	}
+	if c.ReleaseName != "" {
+		c.Client.ReleaseName = c.ReleaseName
+	}
+	cp, err := c.ClientUpgrade.ChartPathOptions.LocateChart(fmt.Sprintf("%s/%s", c.RepoName, c.ChartName), c.Settings)
+	if err != nil {
+		return nil, err
+	}
+
+	debug("CHART PATH: %s\n", cp)
+
+	p := getter.All(c.Settings)
+	valueOpts := &values.Options{}
+
+	valueOpts.ValueFiles = []string{c.ConfigFile}
+	vals, err := valueOpts.MergeValues(p)
+	if err != nil {
+		return nil, err
+	}
+	// Add args
+	if err := strvals.ParseInto(c.Args["set"], vals); err != nil {
+		m := errors.Wrap(err, "failed parsing --set data")
+		return nil, m
+	}
+
+	chartRequested, err := loader.Load(cp)
+	if err != nil {
+		return nil, err
+	}
+
+	if req := chartRequested.Metadata.Dependencies; req != nil {
+		if err := action.CheckDependencies(chartRequested, req); err != nil {
+			return nil, err
+		}
+	}
+	release, err := c.ClientUpgrade.Run(c.ReleaseName, chartRequested, vals)
+	if err != nil {
+		return nil, err
+	}
+	return &release.Manifest, nil
+}
 func isChartInstallable(ch *chart.Chart) (bool, error) {
 	switch ch.Metadata.Type {
 	case "", "application":
@@ -224,5 +270,14 @@ func InitializeHelmAction(settings *cli.EnvSettings) (*action.Install, error) {
 		return nil, err
 	}
 	client := action.NewInstall(actionConfig)
+	return client, nil
+}
+func InitializeHelmUpgradeAction(settings *cli.EnvSettings) (*action.Upgrade, error) {
+	actionConfig := new(action.Configuration)
+	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(),
+		os.Getenv("HELM_DRIVER"), debug); err != nil {
+		return nil, err
+	}
+	client := action.NewUpgrade(actionConfig)
 	return client, nil
 }
