@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/infracloudio/krius/pkg/helm"
 	"github.com/spf13/cobra"
 )
 
@@ -17,12 +18,12 @@ func init() {
 
 func prometheusInstall(cmd *cobra.Command, args []string) {
 
-	chartConfiguration := &helmConfig{
-		repo: "prometheus-community",
-		name: "kube-prometheus-stack",
-		url:  "https://prometheus-community.github.io/helm-charts",
-		args: args,
-		cmd:  cmd,
+	chartConfiguration := &helm.HelmConfig{
+		Repo: "prometheus-community",
+		Name: "kube-prometheus-stack",
+		Url:  "https://prometheus-community.github.io/helm-charts",
+		Args: args,
+		Cmd:  cmd,
 	}
 
 	addAndInstallChart(chartConfiguration)

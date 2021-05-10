@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/infracloudio/krius/pkg/helm"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -25,10 +26,10 @@ func init() {
 }
 
 func thanosInstall(cmd *cobra.Command, args []string) {
-	helmConfiguration := &helmConfig{
-		repo: "bitnami",
-		name: "thanos",
-		url:  "https://charts.bitnami.com/bitnami",
+	helmConfiguration := &helm.HelmConfig{
+		Repo: "bitnami",
+		Name: "thanos",
+		Url:  "https://charts.bitnami.com/bitnami",
 	}
-	fmt.Printf("Need to implement thanos %s, %s and %s", helmConfiguration.name, helmConfiguration.repo, helmConfiguration.url)
+	fmt.Printf("Need to implement thanos %s, %s and %s", helmConfiguration.Name, helmConfiguration.Repo, helmConfiguration.Url)
 }

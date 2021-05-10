@@ -14,7 +14,6 @@ import (
 	"github.com/gofrs/flock"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
-
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
@@ -22,20 +21,10 @@ import (
 	"helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/downloader"
 	"helm.sh/helm/v3/pkg/getter"
+	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/repo"
 	"helm.sh/helm/v3/pkg/strvals"
 )
-
-type HelmClient struct {
-	Url         string
-	RepoName    string
-	ChartName   string
-	ReleaseName string
-	Namespace   string
-	Args        map[string]string
-	Client      *action.Install
-	Settings    *cli.EnvSettings
-}
 
 // AddRepo adds repo with given name and url
 func (client *HelmClient) AddRepo() error {
@@ -132,20 +121,27 @@ func (client *HelmClient) UpdateRepo() error {
 	return nil
 }
 
-func (c *HelmClient) InstallOrUpgradeChart() (*string, error) {
-	if c.Client.Version == "" && c.Client.Devel {
-		c.Client.Version = ">0.0.0-0"
+func (c *HelmClient) ListDeployedReleases() ([]*release.Release, error) {
+	listClient := action.NewList(c.ActionConfig)
+	return listClient.Run()
+}
+
+func (c *HelmClient) InstallChart() (*string, error) {
+	client := action.NewInstall(c.ActionConfig)
+
+	if client.Version == "" && client.Devel {
+		client.Version = ">0.0.0-0"
 	}
 
 	if c.ReleaseName != "" {
-		c.Client.ReleaseName = c.ReleaseName
+		client.ReleaseName = c.ReleaseName
 	}
 
 	// Generate Random name for the release
-	c.Client.GenerateName = true
-	c.Client.ReleaseName, _, _ = c.Client.NameAndChart([]string{c.ChartName})
+	client.GenerateName = true
+	client.ReleaseName, _, _ = client.NameAndChart([]string{c.ChartName})
 
-	cp, err := c.Client.ChartPathOptions.LocateChart(fmt.Sprintf("%s/%s", c.RepoName, c.ChartName), c.Settings)
+	cp, err := client.ChartPathOptions.LocateChart(fmt.Sprintf("%s/%s", c.RepoName, c.ChartName), c.Settings)
 	if err != nil {
 		return nil, err
 	}
@@ -177,11 +173,11 @@ func (c *HelmClient) InstallOrUpgradeChart() (*string, error) {
 
 	if req := chartRequested.Metadata.Dependencies; req != nil {
 		if err := action.CheckDependencies(chartRequested, req); err != nil {
-			if c.Client.DependencyUpdate {
+			if client.DependencyUpdate {
 				man := &downloader.Manager{
 					Out:              os.Stdout,
 					ChartPath:        cp,
-					Keyring:          c.Client.ChartPathOptions.Keyring,
+					Keyring:          client.ChartPathOptions.Keyring,
 					SkipUpdate:       false,
 					Getters:          p,
 					RepositoryConfig: c.Settings.RepositoryConfig,
@@ -196,14 +192,54 @@ func (c *HelmClient) InstallOrUpgradeChart() (*string, error) {
 		}
 	}
 
-	c.Client.Namespace = c.Settings.Namespace()
-	release, err := c.Client.Run(chartRequested, vals)
+	client.Namespace = c.Settings.Namespace()
+	release, err := client.Run(chartRequested, vals)
 	if err != nil {
 		return nil, err
 	}
 	return &release.Manifest, nil
 }
 
+func (c *HelmClient) UpgradeChart(valueOpts *values.Options) (*string, error) {
+	client := action.NewUpgrade(c.ActionConfig)
+
+	if client.Version == "" && client.Devel {
+		client.Version = ">0.0.0-0"
+	}
+	cp, err := client.ChartPathOptions.LocateChart(fmt.Sprintf("%s/%s", c.RepoName, c.ChartName), c.Settings)
+	if err != nil {
+		return nil, err
+	}
+
+	debug("CHART PATH: %s\n", cp)
+	p := getter.All(c.Settings)
+	vals, err := valueOpts.MergeValues(p)
+
+	if err != nil {
+		return nil, err
+	}
+	// Add args
+	if err := strvals.ParseInto(c.Args["set"], vals); err != nil {
+		m := errors.Wrap(err, "failed parsing --set data")
+		return nil, m
+	}
+
+	chartRequested, err := loader.Load(cp)
+	if err != nil {
+		return nil, err
+	}
+
+	if req := chartRequested.Metadata.Dependencies; req != nil {
+		if err := action.CheckDependencies(chartRequested, req); err != nil {
+			return nil, err
+		}
+	}
+	release, err := client.Run(c.ReleaseName, chartRequested, vals)
+	if err != nil {
+		return nil, err
+	}
+	return &release.Manifest, nil
+}
 func isChartInstallable(ch *chart.Chart) (bool, error) {
 	switch ch.Metadata.Type {
 	case "", "application":
@@ -217,12 +253,11 @@ func debug(format string, v ...interface{}) {
 	log.Output(2, fmt.Sprintf(format, v...))
 }
 
-func InitializeHelmAction(settings *cli.EnvSettings) (*action.Install, error) {
+func InitializeHelmAction(settings *cli.EnvSettings) (*action.Configuration, error) {
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(),
 		os.Getenv("HELM_DRIVER"), debug); err != nil {
 		return nil, err
 	}
-	client := action.NewInstall(actionConfig)
-	return client, nil
+	return actionConfig, nil
 }
