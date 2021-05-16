@@ -9,20 +9,53 @@ import (
 	"helm.sh/helm/v3/pkg/cli/values"
 )
 
+const (
+	storageType = "type"
+	accessKey   = "access_key"
+	secretKey   = "secret_key"
+	endpoint    = "endpoint"
+	bucket      = "bucket"
+	configFile  = "config-file"
+	release     = "release"
+	namespace   = "namespace"
+)
+
 var objStoreCmd = &cobra.Command{
 	Use:   "objstore [Name]",
 	Short: "Configure object storage",
 	Run:   configureObjStore,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		configFileFlag, _ := cmd.Flags().GetString(configFile)
+		if configFileFlag == "" {
+			if storeTypeFlag, _ := cmd.Flags().GetString(storageType); storeTypeFlag == "" {
+				return fmt.Errorf("Flag missing - please set %s", storageType)
+			}
+			if accessKeyFlag, _ := cmd.Flags().GetString(accessKey); accessKeyFlag == "" {
+				return fmt.Errorf("Flag missing - please set %s", accessKey)
+			}
+			if secretKeyFlag, _ := cmd.Flags().GetString(secretKey); secretKeyFlag == "" {
+				return fmt.Errorf("Flag missing - please set %s", secretKey)
+			}
+			if endpointFlag, _ := cmd.Flags().GetString(endpoint); endpointFlag == "" {
+				return fmt.Errorf("Flag missing - please set %s", endpoint)
+			}
+			if bucketFlag, _ := cmd.Flags().GetString(bucket); bucketFlag == "" {
+				return fmt.Errorf("Flag missing - please set %s", bucket)
+			}
+			if releaseFlag, _ := cmd.Flags().GetString(release); releaseFlag == "" {
+				return fmt.Errorf("Flag missing - please set %s", release)
+			}
+			if namespaceFlag, _ := cmd.Flags().GetString(namespace); namespaceFlag == "" {
+				return fmt.Errorf("Flag missing - please set %s", namespace)
+			}
+		}
+		return nil
+	},
 }
 
 func init() {
 	configureCmd.AddCommand(objStoreCmd)
 	addConfigureObjStoreFlags(objStoreCmd)
-}
-
-func debug(format string, v ...interface{}) {
-	format = fmt.Sprintf("[debug] %s\n", format)
-	log.Output(2, fmt.Sprintf(format, v...))
 }
 
 func configureObjStore(cmd *cobra.Command, args []string) {
@@ -40,11 +73,6 @@ func configureObjStore(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	release, err := cmd.Flags().GetString("release")
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
 	results, err := helmClient.ListDeployedReleases()
 	if err != nil {
 		log.Fatal(err)
@@ -52,13 +80,13 @@ func configureObjStore(cmd *cobra.Command, args []string) {
 	}
 	exists := false
 	for _, v := range results {
-		if v.Name == release {
+		if v.Name == helmClient.ReleaseName {
 			exists = true
 		}
 	}
 	if exists {
-		configPath := getVarFromCmd(cmd, "config-file", "bucket.yaml")
 		Values := &values.Options{}
+		configPath, _ := cmd.Flags().GetString(configFile)
 		if configPath != "" {
 			Values.ValueFiles = []string{configPath}
 		} else {
@@ -74,11 +102,11 @@ func configureObjStore(cmd *cobra.Command, args []string) {
 }
 
 func createObjStoreValuesMap(cmd *cobra.Command, valueOpts *values.Options) *values.Options {
-	storageType := getVarFromCmd(cmd, "type", "")
-	accessKey := getVarFromCmd(cmd, "access_key", "")
-	secretKey := getVarFromCmd(cmd, "secret_key", "")
-	endpoint := getVarFromCmd(cmd, "endpoint", "")
-	bucket := getVarFromCmd(cmd, "bucket", "")
+	storageType, _ := cmd.Flags().GetString(storageType)
+	accessKey, _ := cmd.Flags().GetString(accessKey)
+	secretKey, _ := cmd.Flags().GetString(secretKey)
+	endpoint, _ := cmd.Flags().GetString(endpoint)
+	bucket, _ := cmd.Flags().GetString(bucket)
 	valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("objstoreConfig.type=%s", storageType))
 	valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("objstoreConfig.config.bucket=%s", bucket))
 	valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("objstoreConfig.config.endpoint=%s", endpoint))

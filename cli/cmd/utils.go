@@ -23,5 +23,4 @@ func addConfigureObjStoreFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("endpoint", "e", "", "bucket's endpoint")
 	cmd.Flags().StringP("access_key", "a", "", "access key")
 	cmd.Flags().StringP("secret_key", "s", "", "secret key")
-
 }
