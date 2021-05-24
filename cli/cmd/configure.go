@@ -1,21 +1,15 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
 var configureCmd = &cobra.Command{
 	Use:   "configure",
 	Short: "Configure the give component",
-	Run:   configureCluster,
+	Args:  cobra.MinimumNArgs(1),
 }
 
 func init() {
 	RootCmd.AddCommand(configureCmd)
-}
-
-func configureCluster(cmd *cobra.Command, args []string) {
-	fmt.Println("Need to implement configuration")
 }

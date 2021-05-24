@@ -1,9 +1,7 @@
 package cmd
 
 import (
-	"fmt"
-	"log"
-
+	"github.com/infracloudio/krius/pkg/helm"
 	"github.com/spf13/cobra"
 )
 
@@ -20,20 +18,13 @@ func init() {
 
 func prometheusInstall(cmd *cobra.Command, args []string) {
 
-	chartConfiguration := &ChartConfig{
-		CHART_REPO: "prometheus-community",
-		CHART_NAME: "kube-prometheus-stack",
-		CHART_URL:  "https://prometheus-community.github.io/helm-charts",
+	chartConfiguration := &helm.HelmConfig{
+		Repo: "prometheus-community",
+		Name: "kube-prometheus-stack",
+		Url:  "https://prometheus-community.github.io/helm-charts",
+		Args: args,
+		Cmd:  cmd,
 	}
 
-	helmClient, err := createHelmClientObject(cmd, args, chartConfiguration)
-	if err != nil {
-		log.Fatal(err)
-	}
-	addAndInstallChart(helmClient)
-}
-
-func debug(format string, v ...interface{}) {
-	format = fmt.Sprintf("[debug] %s\n", format)
-	log.Output(2, fmt.Sprintf(format, v...))
+	addAndInstallChart(chartConfiguration)
 }
