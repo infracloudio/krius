@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/infracloudio/krius/pkg/helm"
 	"github.com/spf13/cobra"
@@ -27,26 +28,31 @@ var objStoreCmd = &cobra.Command{
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		configFileFlag, _ := cmd.Flags().GetString(configFile)
 		if configFileFlag == "" {
+			errors := []string{}
 			if storeTypeFlag, _ := cmd.Flags().GetString(storageType); storeTypeFlag == "" {
-				return fmt.Errorf("Flag missing - please set %s", storageType)
+				errors = append(errors, storageType)
 			}
 			if accessKeyFlag, _ := cmd.Flags().GetString(accessKey); accessKeyFlag == "" {
-				return fmt.Errorf("Flag missing - please set %s", accessKey)
+				errors = append(errors, accessKey)
 			}
 			if secretKeyFlag, _ := cmd.Flags().GetString(secretKey); secretKeyFlag == "" {
-				return fmt.Errorf("Flag missing - please set %s", secretKey)
+				errors = append(errors, secretKey)
 			}
 			if endpointFlag, _ := cmd.Flags().GetString(endpoint); endpointFlag == "" {
-				return fmt.Errorf("Flag missing - please set %s", endpoint)
+				errors = append(errors, endpoint)
 			}
 			if bucketFlag, _ := cmd.Flags().GetString(bucket); bucketFlag == "" {
-				return fmt.Errorf("Flag missing - please set %s", bucket)
+				errors = append(errors, bucket)
 			}
 			if releaseFlag, _ := cmd.Flags().GetString(release); releaseFlag == "" {
-				return fmt.Errorf("Flag missing - please set %s", release)
+				errors = append(errors, release)
 			}
 			if namespaceFlag, _ := cmd.Flags().GetString(namespace); namespaceFlag == "" {
-				return fmt.Errorf("Flag missing - please set %s", namespace)
+				errors = append(errors, namespace)
+			}
+			if len(errors) > 0 {
+				formattedError := strings.Join(errors, ",")
+				return fmt.Errorf("Flag missing - please set %s", formattedError)
 			}
 		}
 		return nil
@@ -69,13 +75,13 @@ func configureObjStore(cmd *cobra.Command, args []string) {
 
 	helmClient, err := createHelmClientObject(chartConfiguration)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error creating helm client: %v", err)
 		return
 	}
 
 	results, err := helmClient.ListDeployedReleases()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("helm list error: %v", err)
 		return
 	}
 	exists := false
@@ -96,8 +102,10 @@ func configureObjStore(cmd *cobra.Command, args []string) {
 		if err != nil {
 			fmt.Printf("could not upgrade The Observability Stack %s", err)
 		} else {
-			fmt.Println(*result)
+			log.Println(*result)
 		}
+	} else {
+		fmt.Print("Release name does not exist")
 	}
 }
 

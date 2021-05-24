@@ -27,16 +27,16 @@ func init() {
 func addAndInstallChart(config *helm.HelmConfig) {
 	helmClient, err := createHelmClientObject(config)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error creating helm client: %v", err)
 	}
 	err = helmClient.AddRepo()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("helm add repo error: %v", err)
 		return
 	}
 	err = helmClient.UpdateRepo()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("helm update repo error: %v", err)
 		return
 	}
 	fmt.Println("Installing the Prometheus stack")

@@ -19,7 +19,7 @@ type conf struct {
 func (c *conf) getConf(valuesYaml string) *conf {
 	yamlFile, err := ioutil.ReadFile(valuesYaml)
 	if err != nil {
-		log.Printf("yamlFile.Get err   #%v ", err)
+		log.Fatalf("yamlFile.Get err #%v ", err)
 	}
 	err = yaml.Unmarshal(yamlFile, c)
 	if err != nil {
@@ -52,7 +52,7 @@ func createHelmClientObject(helmConfig *helm.HelmConfig) (*helm.HelmClient, erro
 
 	action, err := helm.InitializeHelmAction(settings)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("helm initialize error: %v", err)
 	}
 	helmClient := helm.HelmClient{
 		RepoName:     helmConfig.Repo,
