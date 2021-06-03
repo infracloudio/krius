@@ -48,7 +48,7 @@ func configureThanos(cmd *cobra.Command, args []string) {
 		chartConfiguration = &helm.HelmConfig{
 			Repo: "bitnami",
 			Name: "thanos",
-			Url:  "bitnami https://charts.bitnami.com/bitnami",
+			Url:  "https://charts.bitnami.com/bitnami",
 		}
 		installThanosReceiver(chartConfiguration, cmd)
 	} else {
