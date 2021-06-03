@@ -35,7 +35,7 @@ func configureThanos(cmd *cobra.Command, args []string) {
 		if release == "" {
 			log.Fatal("Please provide the prometheus release name to inject the sidecar to")
 		} else if err != nil {
-			log.Fatalf("Something went wrong: %v", err)
+			log.Fatalf("Could not fetch release name from the flag: %v", err)
 		}
 		chartConfiguration = &helm.HelmConfig{
 			Repo: "prometheus-community",
@@ -52,7 +52,7 @@ func configureThanos(cmd *cobra.Command, args []string) {
 		}
 		installThanosReceiver(chartConfiguration, cmd)
 	} else {
-		log.Fatal("Invalid Option for configure as flag, Please set either of receiver/sidecar")
+		log.Fatal("Invalid Option for configure-as flag, Please set either of receiver/sidecar")
 	}
 }
 
@@ -60,18 +60,18 @@ func installThanosSidecar(chartConfig *helm.HelmConfig) {
 	//Creating Helm Client object out from the chart cofiguration
 	helmClient, err := createHelmClientObject(chartConfig)
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Fatalf("Error while creating helm client object: %v", err)
 	}
 
 	//Fetching release name from the release flag
 	release, err := chartConfig.Cmd.Flags().GetString("release")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Could not grab release name from the flag: %v",err)
 	}
 	// Listing releases
 	results, err := helmClient.ListDeployedReleases()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error while fetching existing releases: %v", err)
 	}
 	// Checking if the release name provided by the user exists
 	exists := false
@@ -87,7 +87,7 @@ func installThanosSidecar(chartConfig *helm.HelmConfig) {
 	Values := createSidecarValuesMap()
 	result, err := helmClient.UpgradeChart(Values)
 	if err != nil {
-		log.Fatalf("could not upgrade The Observability Stack %s", err)
+		log.Fatalf("Could not upgrade The Observability Stack %v", err)
 	} else {
 		fmt.Println(*result)
 	}
