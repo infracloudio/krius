@@ -17,5 +17,5 @@ $ make
 
 #### Step 3: Run the command
 ```bash
-$ krius install prometheus prom --namespace=demo --release=demo
+$ krius install prometheus --namespace=demo --release=demo
 ```
