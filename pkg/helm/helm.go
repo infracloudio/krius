@@ -261,3 +261,11 @@ func InitializeHelmAction(settings *cli.EnvSettings) (*action.Configuration, err
 	}
 	return actionConfig, nil
 }
+func NewClientFromKubeConf(options *KubeConfClientOptions) (*action.Configuration, error) {
+	settings := cli.New()
+	if options.KubeContext != "" {
+		settings.KubeContext = options.KubeContext
+	}
+
+	return InitializeHelmAction(settings)
+}

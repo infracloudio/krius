@@ -26,3 +26,16 @@ type HelmConfig struct {
 	ValuesYaml string
 	ValueOpts  *values.Options
 }
+
+type KubeConfClientOptions struct {
+	*Options
+	KubeContext string
+	KubeConfig  []byte
+}
+type Options struct {
+	Namespace        string
+	RepositoryConfig string
+	RepositoryCache  string
+	Debug            bool
+	Linting          bool
+}
