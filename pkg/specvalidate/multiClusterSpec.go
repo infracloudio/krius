@@ -13,13 +13,13 @@ var RuleSchema = `
 			"name": {
 			  "type": "string"
 			},
-			"type": { "enum": ["Thanos", "Grafana", "Prometheus"] }
+			"type": { "enum": ["thanos", "grafana", "prometheus"] }
 		  },
 		  "required": ["name", "type"],
 		  "allOf": [
 			{
 			  "if": {
-				"properties": { "type": { "const": "Thanos" } },
+				"properties": { "type": { "const": "thanos" } },
 				"required": ["type"]
 			  },
 			  "then": {
@@ -39,38 +39,37 @@ var RuleSchema = `
 						  "targets": {
 							"type": "string"
 						  },
-						  "dedup-enbaled": {
+						  "dedupEnbaled": {
 							"type": "string"
 						  },
 						  "autoDownSample": {
 							"type": "string"
 						  },
-						  "partial_response": {
+						  "partialResponse": {
 							"type": "string"
 						  }
 						},
 						"required": ["name"]
 					  },
-					  "querier-fe": {
+					  "querierFE": {
 						"type": "object",
 						"properties": {
 						  "name": {
 							"type": "string"
 						  },
 						  "cacheOption": {
-							"mode": { "enum": ["in-memory", "memcached"] }
+							"mode": { "enum": ["inMemory", "memcached"] }
 						  },
-						  "memcached-options": {
+						  "memcachedOptions": {
 							"type": "object",
 							"properties": {
 							  "enabled": {
 								"type": "boolean"
 							  },
-							  "key1": {
+							  "key": {
 								"type": "string"
 							  }
-							},
-							"required": ["key1"]
+							}
 						  }
 						},
 						"if": {
@@ -80,10 +79,10 @@ var RuleSchema = `
 						  "required": ["cacheOption"]
 						},
 						"then": {
-						  "required": ["memcached-options"]
+						  "required": ["memcachedOptions"]
 						},
 						"else": {
-						  "not": { "required": ["memcached-options"] }
+						  "not": { "required": ["memcachedOptions"] }
 						},
 						"required": ["name", "cacheOption"]
 					  },
@@ -91,18 +90,6 @@ var RuleSchema = `
 						"type": "object",
 						"properties": {
 						  "name": {
-							"type": "string"
-						  },
-						  "httpPort": {
-							"type": "string"
-						  },
-						  "httpNodePort": {
-							"type": "string"
-						  },
-						  "remoteWritePort": {
-							"type": "string"
-						  },
-						  "remoteWriteNodePort": {
 							"type": "string"
 						  }
 						},
@@ -120,7 +107,7 @@ var RuleSchema = `
 					  "ruler": {
 						"type": "object",
 						"properties": {
-						  "alertmanagers": {
+						  "alertManagers": {
 							"type": "array",
 							"items": [
 							  {
@@ -132,9 +119,10 @@ var RuleSchema = `
 							"type": "string"
 						  }
 						},
-						"required": ["alertmanagers", "config"]
+						"required": ["alertManagers", "config"]
 					  }
 					},
+					"additionalProperties": false,
 					"required": ["name", "querier"]
 				  }
 				}
@@ -142,7 +130,7 @@ var RuleSchema = `
 			},
 			{
 			  "if": {
-				"properties": { "type": { "const": "Grafana" } },
+				"properties": { "type": { "const": "grafana" } },
 				"required": ["type"]
 			  },
 			  "then": {
@@ -169,6 +157,7 @@ var RuleSchema = `
 						"required": ["name", "namespace"]
 					  }
 					},
+					"additionalProperties": false,
 					"required": ["name", "setup"]
 				  }
 				}
@@ -176,7 +165,7 @@ var RuleSchema = `
 			},
 			{
 			  "if": {
-				"properties": { "type": { "const": "Prometheus" } },
+				"properties": { "type": { "const": "prometheus" } },
 				"required": ["type"]
 			  },
 			  "then": {
@@ -201,6 +190,7 @@ var RuleSchema = `
 						"type": "string"
 					  }
 					},
+					"additionalProperties": false,
 					"if": {
 					  "properties": { "mode": { "const": "receiver" } },
 					  "required": ["mode"]
@@ -240,14 +230,14 @@ var RuleSchema = `
 				  "endpoint": {
 					"type": "string"
 				  },
-				  "access_key": {
+				  "accessKey": {
 					"type": "string"
 				  },
-				  "secret_key": {
+				  "secretKey": {
 					"type": "string"
 				  }
 				},
-				"required": ["bucket", "endpoint", "access_key", "secret_key"]
+				"required": ["bucket", "endpoint", "accessKey", "secretKey"]
 			  },
 			  "bucketweb": {
 				"type": "object",
