@@ -6,6 +6,7 @@ import (
 
 func addInstallFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("namespace", "n", "default", "namespace in which the chart need to be installed")
+	cmd.Flags().StringP("release", "r", "default", "release name to be used for the specific install")
 }
 
 func addThanosFlags(cmd *cobra.Command) {
