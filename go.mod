@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/gofrs/flock v0.8.0
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.1.3
 	github.com/xeipuuv/gojsonschema v1.2.0
