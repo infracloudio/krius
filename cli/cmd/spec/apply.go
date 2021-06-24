@@ -1,7 +1,6 @@
 package spec
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -52,28 +51,61 @@ func applySpec(cmd *cobra.Command, args []string) {
 	for _, object := range config.ObjStoreConfigslist {
 		objs = append(objs, object)
 	}
+	preFlightErrors := []string{}
+	// check for preflight errors for all the clusters
 	for _, cluster := range config.Clusters {
 		switch cluster.Type {
 		case "prometheus":
-			cluster.installPrometheus(objs)
-
+			errs := cluster.preflightChecks(objs)
+			if errs != nil {
+				preFlightErrors = append(preFlightErrors, errs...)
+			}
+		case "thanos":
+		case "grafana":
+		}
+	}
+	if len(preFlightErrors) > 0 {
+		log.Printf("Preflight checks failed %s", preFlightErrors)
+		return
+	}
+	log.Println("Preflight checks passed")
+	for _, cluster := range config.Clusters {
+		switch cluster.Type {
+		case "prometheus":
+			cluster.installPrometheus()
 		case "thanos":
 		case "grafana":
 		}
 	}
 }
+func (cluster *Cluster) preflightChecks(objStores []ObjStoreConfigslist) []string {
+	promSpec, err := cluster.GetConfig()
+	if err != nil {
+		log.Printf("Error getting config %s", err)
+		return nil
+	}
+	spec, _ := yaml.Marshal(promSpec)
+	var prom Prometheus
+	yaml.Unmarshal(spec, &prom)
+	return prom.preCheckProm(objStores, cluster.Name)
 
-func (p *Prometheus) preChecks(objStores []ObjStoreConfigslist, clusterName string) error {
+}
+func (p *Prometheus) preCheckProm(objStores []ObjStoreConfigslist, clusterName string) []string {
+	promErrs := []string{}
 	if p.Install {
 		err := CreateNameSpaceIfNotExist(clusterName, p.Namespace)
 		if err != nil {
-			return err
+			e := fmt.Sprintf("cluster.%s: %s,", clusterName, err)
+			promErrs = append(promErrs, e)
+			return promErrs // do not try to create secret, if err in creating
 		}
 	} else {
 		// if update namepsace should exist
 		err := CheckNamespaceExist(clusterName, p.Namespace)
 		if err != nil {
-			return err
+			e := fmt.Sprintf("cluster.%s: %s,", clusterName, err)
+			promErrs = append(promErrs, e)
+			return promErrs // do not try to create secret, if no namespace
 		}
 	}
 	found := false
@@ -82,32 +114,32 @@ func (p *Prometheus) preChecks(objStores []ObjStoreConfigslist, clusterName stri
 			found = true
 			err := createSecretforObjStore(clusterName, p.Namespace, v.Type, v.Name, v.Config)
 			if err != nil {
-				return err
+				e := fmt.Sprintf("cluster.%s: %s,", p.Name, err)
+				promErrs = append(promErrs, e)
 			}
 			break
 		}
 	}
 	if !found {
-		return errors.New("bucket config not present")
+		e := fmt.Sprintf("cluster.%s: Bucket config doesn't exist,", clusterName)
+		promErrs = append(promErrs, e)
 	}
-	return nil
+	return promErrs
 }
 
-func (cluster *Cluster) installPrometheus(objStores []ObjStoreConfigslist) {
+func (cluster *Cluster) installPrometheus() {
 	promSpec, err := cluster.GetConfig()
+	if err != nil {
+		log.Printf("Error getting config %s", err)
+		return
+	}
 	spec, _ := yaml.Marshal(promSpec)
 	var prom Prometheus
 	yaml.Unmarshal(spec, &prom)
-	err = prom.preChecks(objStores, cluster.Name)
-	if err != nil {
-		log.Printf("Pre Checks failed %s", err)
-		return
-	}
 	helmClient, err := createHelmClientObject(cluster.Name, prom.Namespace)
 	if err != nil {
 		return
 	}
-
 	helmClient.ChartName = "kube-prometheus-stack"
 	helmClient.RepoName = "prometheus-community"
 	helmClient.Url = "https://prometheus-community.github.io/helm-charts"
@@ -117,32 +149,44 @@ func (cluster *Cluster) installPrometheus(objStores []ObjStoreConfigslist) {
 		Values := &values.Options{}
 		if prom.Mode == "sidecar" {
 			Values = createSidecarValuesMap(prom.ObjStoreConfig)
-		}
-		_, err = helmClient.InstallChart(Values)
-		if err != nil {
-			log.Printf("Error installing prometheus: %s", err)
-			return
+			_, err = helmClient.InstallChart(Values)
+			if err != nil {
+				log.Printf("Error installing prometheus: %s", err)
+				return
+			}
+		} else {
+			// TODO mode is receiver
 		}
 	} else {
-		//prom is already installed, check if mode is sidecar, then upgrade the chart
-		Values := &values.Options{}
-		if prom.Mode == "sidecar" {
-			Values = createSidecarValuesMap(prom.ObjStoreConfig)
-		}
-		_, err = helmClient.UpgradeChart(Values)
+		// prometheus is already installed, check the release exist & mode, then upgrade the chart
+		results, err := helmClient.ListDeployedReleases()
 		if err != nil {
-			log.Printf("Error adding sidecar: %s", err)
+			log.Fatalf("helm list error: %v", err)
 			return
 		}
-	}
+		exists := false
+		for _, v := range results {
+			if v.Name == helmClient.ReleaseName {
+				exists = true
+			}
+		}
+		if exists {
+			Values := &values.Options{}
+			if prom.Mode == "sidecar" {
+				Values = createSidecarValuesMap(prom.ObjStoreConfig)
+				_, err = helmClient.UpgradeChart(Values)
+				if err != nil {
+					log.Printf("Error adding sidecar: %s", err)
+					return
+				}
+			} else {
+				// TODO mode is receiver
+			}
+		} else {
+			log.Printf("Release %s doesn't exist", helmClient.ReleaseName)
+			return
+		}
 
-	results, err := helmClient.ListDeployedReleases()
-	if err != nil {
-		log.Fatalf("helm list error: %v", err)
-		return
-	}
-	for _, v := range results {
-		fmt.Println("v.Name", v.Name)
 	}
 }
 

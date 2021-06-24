@@ -29,6 +29,12 @@ type BucketConfig struct {
 	Endpoint   string `yaml:"endpoint"`
 	AccessKey  string `yaml:"accessKey"`
 	SecretKey  string `yaml:"secretKey"`
+	Insecure   bool   `yaml:"insecure"`
+	Trace      Trace  `yaml:"trace"`
+}
+
+type Trace struct {
+	Enable bool `yaml:"enable"`
 }
 
 // Prometheus

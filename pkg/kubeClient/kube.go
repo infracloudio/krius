@@ -2,7 +2,6 @@ package kubeClient
 
 import (
 	"context"
-	"errors"
 	"log"
 	"os"
 
@@ -85,7 +84,7 @@ func (k KubeConfig) CreateNSIfNotExist() error {
 func (k KubeConfig) CheckNamespaceExist() error {
 	_, err := clientset.CoreV1().Namespaces().Get(context.Background(), k.Namespace, metav1.GetOptions{})
 	if err != nil {
-		return errors.New("Namespace doesn't exist")
+		return err
 	}
 	return nil
 }
