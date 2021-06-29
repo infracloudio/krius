@@ -126,7 +126,7 @@ func (c *HelmClient) ListDeployedReleases() ([]*release.Release, error) {
 	return listClient.Run()
 }
 
-func (c *HelmClient) InstallChart() (*string, error) {
+func (c *HelmClient) InstallChart(valueOpts *values.Options) (*string, error) {
 	client := action.NewInstall(c.ActionConfig)
 
 	if client.Version == "" && client.Devel {
@@ -140,21 +140,20 @@ func (c *HelmClient) InstallChart() (*string, error) {
 	// Generate Random name for the release
 	client.GenerateName = true
 	client.ReleaseName, _, _ = client.NameAndChart([]string{c.ChartName})
-
 	cp, err := client.ChartPathOptions.LocateChart(fmt.Sprintf("%s/%s", c.RepoName, c.ChartName), c.Settings)
 	if err != nil {
 		return nil, err
 	}
 
 	debug("CHART PATH: %s\n", cp)
-
+	if valueOpts == nil {
+		valueOpts = &values.Options{}
+	}
 	p := getter.All(c.Settings)
-	valueOpts := &values.Options{}
 	vals, err := valueOpts.MergeValues(p)
 	if err != nil {
 		return nil, err
 	}
-
 	// Add args
 	if err := strvals.ParseInto(c.Args["set"], vals); err != nil {
 		m := errors.Wrap(err, "failed parsing --set data")
@@ -261,8 +260,7 @@ func InitializeHelmAction(settings *cli.EnvSettings) (*action.Configuration, err
 	}
 	return actionConfig, nil
 }
-func NewClientFromKubeConf(options *KubeConfClientOptions) (*action.Configuration, error) {
-	settings := cli.New()
+func NewClientFromKubeConf(options *KubeConfClientOptions, settings *cli.EnvSettings) (*action.Configuration, error) {
 	if options.KubeContext != "" {
 		settings.KubeContext = options.KubeContext
 	}

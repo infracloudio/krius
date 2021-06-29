@@ -40,7 +40,7 @@ func addAndInstallChart(config *helm.HelmConfig) {
 		return
 	}
 	fmt.Println("Installing the Prometheus stack")
-	_, err = helmClient.InstallChart()
+	_, err = helmClient.InstallChart(nil)
 	if err != nil {
 		fmt.Printf("could not install The Observability Stack %s", err)
 	}

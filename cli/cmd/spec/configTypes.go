@@ -13,14 +13,28 @@ type Cluster struct {
 	Data Data   `yaml:"data"`
 }
 
-// type Data2 map[string]map[string]interface{}
 type Data map[string]interface{}
 
 // Objstoresonfiglist
 type ObjStoreConfigslist struct {
-	Bucketweb Bucketweb `yaml:"bucketweb"`
-	Name      string    `yaml:"name"`
-	Type      string    `yaml:"type"`
+	Bucketweb Bucketweb    `yaml:"bucketweb"`
+	Name      string       `yaml:"name"`
+	Type      string       `yaml:"type"`
+	Config    BucketConfig `yaml:"config"`
+}
+
+// Bucket Config
+type BucketConfig struct {
+	BucketName string `yaml:"bucket"`
+	Endpoint   string `yaml:"endpoint"`
+	AccessKey  string `yaml:"accessKey"`
+	SecretKey  string `yaml:"secretKey"`
+	Insecure   bool   `yaml:"insecure"`
+	Trace      Trace  `yaml:"trace"`
+}
+
+type Trace struct {
+	Enable bool `yaml:"enable"`
 }
 
 // Prometheus
@@ -30,7 +44,7 @@ type Prometheus struct {
 	Namespace        string `yaml:"namespace"`
 	Mode             string `yaml:"mode"`
 	ReceiveReference string `yaml:"receiveReference"`
-	Objstoresonfig   string `yaml:"objStoreConfig"`
+	ObjStoreConfig   string `yaml:"objStoreConfig"`
 }
 
 // Thanos
