@@ -66,7 +66,15 @@ func CheckNamespaceExist(clusterName, namespace string) error {
 	return kubeClient.CheckNamespaceExist()
 }
 
-func createHelmClientObject(context, namespace string) (*helm.HelmClient, error) {
+func GetPrometheusTargets(clusterName, namespace, promName string) []string {
+	kubeClient, err := GetKubeClient(namespace, clusterName)
+	if err != nil {
+		return nil
+	}
+	return kubeClient.GetServiceInfo(promName + "-kube-prometheus-thanos-external")
+}
+
+func createHelmClientObject(context, namespace string, helmConfig *helm.HelmConfig) (*helm.HelmClient, error) {
 	opt := &helm.KubeConfClientOptions{
 		KubeContext: context,
 	}
@@ -79,6 +87,9 @@ func createHelmClientObject(context, namespace string) (*helm.HelmClient, error)
 	helmClient := helm.HelmClient{
 		ActionConfig: action,
 		Settings:     settings,
+		RepoName:     helmConfig.Repo,
+		Url:          helmConfig.Url,
+		ChartName:    helmConfig.Name,
 	}
 	return &helmClient, nil
 }

@@ -4,6 +4,7 @@ package spec
 type Config struct {
 	Clusters            []Cluster             `yaml:"clusters"`
 	ObjStoreConfigslist []ObjStoreConfigslist `yaml:"objStoreConfigslist"`
+	Order               int
 }
 
 // Cluster
@@ -49,12 +50,14 @@ type Prometheus struct {
 
 // Thanos
 type Thanos struct {
-	Name      string    `yaml:"name"`
-	Querier   Querier   `yaml:"querier"`
-	Querierfe Querierfe `yaml:"querierFE"`
-	Reciever  Reciever  `yaml:"receiver"`
-	Compactor Compactor `yaml:"compactor"`
-	Ruler     Ruler     `yaml:"ruler"`
+	Name           string    `yaml:"name"`
+	Namespace      string    `yaml:"namespace"`
+	Querier        Querier   `yaml:"querier"`
+	Querierfe      Querierfe `yaml:"querierFE"`
+	Reciever       Reciever  `yaml:"receiver"`
+	Compactor      Compactor `yaml:"compactor"`
+	Ruler          Ruler     `yaml:"ruler"`
+	ObjStoreConfig string    `yaml:"objStoreConfig"`
 }
 
 // Grafana
@@ -71,11 +74,12 @@ type Querierfe struct {
 
 // Querier
 type Querier struct {
-	Targets         string `yaml:"targets"`
-	Dedupenbaled    string `yaml:"dedupEnbaled"`
-	Autoownample    string `yaml:"autoDownSample"`
-	Partialresponse string `yaml:"partialResponse"`
-	Name            string `yaml:"name"`
+	Targets         []string `yaml:"targets"`
+	DedupEnbaled    string   `yaml:"dedupEnbaled"`
+	AutoDownsample  bool     `yaml:"autoDownSample"`
+	PartialResponse bool     `yaml:"partialResponse"`
+	Name            string   `yaml:"name"`
+	ExtraFlags      []string
 }
 
 // Compactor
