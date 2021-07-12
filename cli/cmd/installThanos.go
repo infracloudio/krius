@@ -13,7 +13,7 @@ var thanosCmd = &cobra.Command{
 	Short: "Install thanos component",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			return errors.New("Missing argument to configure thanos as: sidecar, receiver\n\n For example: krius install thanos sidecar\n")
+			return errors.New("missing argument to configure thanos as: sidecar, receiver\n\n For example: krius install thanos sidecar")
 		}
 		return nil
 	},

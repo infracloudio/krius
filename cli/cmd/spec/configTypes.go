@@ -55,7 +55,7 @@ type Thanos struct {
 	ObjStoreConfig string    `yaml:"objStoreConfig"`
 	Querier        Querier   `yaml:"querier"`
 	Querierfe      Querierfe `yaml:"querierFE"`
-	Reciever       Reciever  `yaml:"receiver"`
+	Reciever       Receiver  `yaml:"receiver"`
 	Compactor      Compactor `yaml:"compactor"`
 	Ruler          Ruler     `yaml:"ruler"`
 }
@@ -100,8 +100,8 @@ type Setup struct {
 	Namespace string `yaml:"namespace"`
 }
 
-// Reciever
-type Reciever struct {
+// Receiver
+type Receiver struct {
 	Name string `yaml:"name"`
 }
 

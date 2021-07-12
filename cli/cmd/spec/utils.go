@@ -37,10 +37,10 @@ func addSpecApplyFlags(cmd *cobra.Command) {
 func createSecretforObjStore(clusterName, namespace, configType, secretName string, bucConfig BucketConfig) error {
 	//create a secret for bucket config
 	secretSpec := map[string][]byte{}
-	bucket := ObjBucketConfig(bucConfig)
 	var obj objspec
 	obj.Type = configType
-	obj.Data = bucket
+	obj.Data = ObjBucketConfig(bucConfig)
+	// TODO err ignored
 	objYaml, _ := yaml.Marshal(obj)
 	secretSpec["objstore.yml"] = []byte(objYaml)
 	kubeClient, err := GetKubeClient(namespace, clusterName)

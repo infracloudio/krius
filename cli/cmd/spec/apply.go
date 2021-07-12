@@ -12,7 +12,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
-	"helm.sh/helm/v3/pkg/cli/values"
 )
 
 const (
@@ -22,7 +21,7 @@ const (
 var applyCmd = &cobra.Command{
 	Use:   "apply",
 	Short: "Applies/Updates the give profie file",
-	Run:   applySpec,
+	RunE:  applySpec,
 }
 
 func init() {
@@ -30,12 +29,11 @@ func init() {
 	addSpecApplyFlags(applyCmd)
 }
 
-func applySpec(cmd *cobra.Command, args []string) {
+func applySpec(cmd *cobra.Command, args []string) (err error) {
 	configFileFlag, _ := cmd.Flags().GetString(configFile)
 	loader, ruleSchemaLoader, err := spec.GetLoaders(configFileFlag)
 	if err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 	valid, errors := spec.ValidateYML(loader, ruleSchemaLoader)
 	if !valid {
@@ -87,8 +85,7 @@ func applySpec(cmd *cobra.Command, args []string) {
 		case "prometheus":
 			target, err := cluster.installPrometheus()
 			if err != nil {
-				log.Println(err)
-				return
+				return err
 			}
 			targets = append(targets, target)
 		case "thanos":
@@ -96,6 +93,7 @@ func applySpec(cmd *cobra.Command, args []string) {
 		case "grafana":
 		}
 	}
+	return
 }
 func (cluster *Cluster) preflightChecks(objStores []ObjStoreConfig, c *Config) []string {
 	if cluster.Type == "prometheus" {
@@ -208,9 +206,8 @@ func (cluster *Cluster) installPrometheus() (string, error) {
 	helmClient.ReleaseName = prom.Name
 	helmClient.Namespace = prom.Namespace
 	if prom.Install {
-		Values := &values.Options{}
 		if prom.Mode == "sidecar" {
-			Values = createSidecarValuesMap(prom.ObjStoreConfig)
+			Values := createSidecarValuesMap(prom.ObjStoreConfig)
 			_, err = helmClient.InstallChart(Values)
 			if err != nil {
 				log.Printf("Error installing prometheus: %s", err)
@@ -234,9 +231,8 @@ func (cluster *Cluster) installPrometheus() (string, error) {
 			}
 		}
 		if exists {
-			Values := &values.Options{}
 			if prom.Mode == "sidecar" {
-				Values = createSidecarValuesMap(prom.ObjStoreConfig)
+				Values := createSidecarValuesMap(prom.ObjStoreConfig)
 				_, err = helmClient.UpgradeChart(Values)
 				if err != nil {
 					return "", err
