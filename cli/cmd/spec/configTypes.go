@@ -2,8 +2,8 @@ package spec
 
 // KriusConfig
 type Config struct {
-	Clusters            []Cluster             `yaml:"clusters"`
-	ObjStoreConfigslist []ObjStoreConfigslist `yaml:"objStoreConfigslist"`
+	Clusters            []Cluster        `yaml:"clusters"`
+	ObjStoreConfigslist []ObjStoreConfig `yaml:"objStoreConfigslist"`
 	Order               int
 }
 
@@ -17,7 +17,7 @@ type Cluster struct {
 type Data map[string]interface{}
 
 // Objstoresonfiglist
-type ObjStoreConfigslist struct {
+type ObjStoreConfig struct {
 	Bucketweb Bucketweb    `yaml:"bucketweb"`
 	Name      string       `yaml:"name"`
 	Type      string       `yaml:"type"`
@@ -52,12 +52,12 @@ type Prometheus struct {
 type Thanos struct {
 	Name           string    `yaml:"name"`
 	Namespace      string    `yaml:"namespace"`
+	ObjStoreConfig string    `yaml:"objStoreConfig"`
 	Querier        Querier   `yaml:"querier"`
 	Querierfe      Querierfe `yaml:"querierFE"`
 	Reciever       Reciever  `yaml:"receiver"`
 	Compactor      Compactor `yaml:"compactor"`
 	Ruler          Ruler     `yaml:"ruler"`
-	ObjStoreConfig string    `yaml:"objStoreConfig"`
 }
 
 // Grafana

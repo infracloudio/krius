@@ -14,7 +14,7 @@ func createSidecarValuesMap(secretName string) *values.Options {
 		fmt.Sprintf("prometheus.thanosService.enabled=%s", "true"),
 		fmt.Sprintf("prometheus.thanosServiceExternal.enabled=%s", "true"),
 		fmt.Sprintf("prometheus.prometheusSpec.thanos.objectStorageConfig.name=%s", secretName),
-		fmt.Sprintf("prometheus.prometheusSpec.thanos.objectStorageConfig.key=%s", "sidecar")}
+		fmt.Sprintf("prometheus.prometheusSpec.thanos.objectStorageConfig.key=%s", "objstore.yml")}
 	return &valueOpts
 }
 
@@ -31,10 +31,11 @@ func createThanosValuesMap(thanos Thanos) *values.Options {
 
 	extraFlags += "}"
 	valueOpts.Values = []string{
+		fmt.Sprintf("existingObjstoreSecret=%s", thanos.ObjStoreConfig),
 		fmt.Sprintf("query.stores=%s", targets),
+		fmt.Sprintf("storegateway.enabled=%s", "true"),
 		fmt.Sprintf("query.extraFlags=%s", extraFlags),
-		fmt.Sprintf("queryFrontend.enabled=%s", "true"),
-		fmt.Sprintf("existingObjstoreSecret=%s", thanos.ObjStoreConfig)}
+		fmt.Sprintf("queryFrontend.enabled=%s", "true")}
 
 	if thanos.Compactor.Name != "" {
 		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("compactor.enabled=%s", "true"))

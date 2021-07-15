@@ -49,21 +49,17 @@ func applySpec(cmd *cobra.Command, args []string) {
 	}
 	var config Config
 	yaml.Unmarshal(yamlFile, &config)
-	objs := []ObjStoreConfigslist{}
-	for _, object := range config.ObjStoreConfigslist {
-		objs = append(objs, object)
-	}
 	preFlightErrors := []string{}
 	// check for preflight errors for all the clusters
 	for _, cluster := range config.Clusters {
 		switch cluster.Type {
 		case "prometheus":
-			errs := cluster.preflightChecks(objs, &config)
+			errs := cluster.preflightChecks(config.ObjStoreConfigslist, &config)
 			if errs != nil {
 				preFlightErrors = append(preFlightErrors, errs...)
 			}
 		case "thanos":
-			errs := cluster.preflightChecks(objs, &config)
+			errs := cluster.preflightChecks(config.ObjStoreConfigslist, &config)
 			if errs != nil {
 				preFlightErrors = append(preFlightErrors, errs...)
 			}
@@ -101,7 +97,7 @@ func applySpec(cmd *cobra.Command, args []string) {
 		}
 	}
 }
-func (cluster *Cluster) preflightChecks(objStores []ObjStoreConfigslist, c *Config) []string {
+func (cluster *Cluster) preflightChecks(objStores []ObjStoreConfig, c *Config) []string {
 	if cluster.Type == "prometheus" {
 		promSpec, err := cluster.GetConfig()
 		if err != nil {
@@ -123,7 +119,7 @@ func (cluster *Cluster) preflightChecks(objStores []ObjStoreConfigslist, c *Conf
 			log.Printf("Error getting config %s", err)
 			return nil
 		}
-		spec, _ := yaml.Marshal(thanosSpec)
+		spec, err := yaml.Marshal(thanosSpec)
 		var thanos Thanos
 		yaml.Unmarshal(spec, &thanos)
 		return thanos.preCheckThanos(objStores, cluster.Name)
@@ -132,7 +128,7 @@ func (cluster *Cluster) preflightChecks(objStores []ObjStoreConfigslist, c *Conf
 
 }
 
-func (t *Thanos) preCheckThanos(objStores []ObjStoreConfigslist, clusterName string) []string {
+func (t *Thanos) preCheckThanos(objStores []ObjStoreConfig, clusterName string) []string {
 	promErrs := []string{}
 
 	found := false
@@ -154,7 +150,7 @@ func (t *Thanos) preCheckThanos(objStores []ObjStoreConfigslist, clusterName str
 	return promErrs
 }
 
-func (p *Prometheus) preCheckProm(objStores []ObjStoreConfigslist, clusterName string) []string {
+func (p *Prometheus) preCheckProm(objStores []ObjStoreConfig, clusterName string) []string {
 	promErrs := []string{}
 	if p.Install {
 		err := CreateNameSpaceIfNotExist(clusterName, p.Namespace)
@@ -223,9 +219,8 @@ func (cluster *Cluster) installPrometheus() (string, error) {
 				target := GetPrometheusTargets(cluster.Name, prom.Namespace, prom.Name)
 				return target[0], nil
 			}
-		} else {
-			// TODO mode is receiver
-		}
+		} // TODO mode is receiver
+
 	} else {
 		// prometheus is already installed, check the release exist & mode, then upgrade the chart
 		results, err := helmClient.ListDeployedReleases()
@@ -247,11 +242,14 @@ func (cluster *Cluster) installPrometheus() (string, error) {
 					return "", err
 				} else {
 					target := GetPrometheusTargets(cluster.Name, prom.Namespace, prom.Name)
-					return target[0], nil
+					if len(target) > 0 {
+						return target[0], nil
+					}
+					return "", errors.New("Error getting sidecar target info")
+
 				}
-			} else {
-				// TODO mode is receiver
 			}
+			// TODO mode is receiver
 		} else {
 			errMsg := fmt.Sprintf("Release %s doesn't exist", helmClient.ReleaseName)
 			return "", errors.New(errMsg)
@@ -287,8 +285,7 @@ func (cluster *Cluster) installThanos(targets []string) error {
 	thanos.Querier.ExtraFlags = extraFlags
 	thanos.Querier.Targets = targets
 
-	Values := &values.Options{}
-	Values = createThanosValuesMap(thanos)
+	Values := createThanosValuesMap(thanos)
 	_, err = helmClient.InstallChart(Values)
 	log.Println("error installing Thanos", err)
 	return err
