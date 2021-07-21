@@ -30,6 +30,12 @@ var RuleSchema = `
 					  "name": {
 						"type": "string"
 					  },
+					  "namespace": {
+						"type": "string"
+					  },
+					  "objStoreConfig": {
+						"type": "string"
+					  },
 					  "querier": {
 						"type": "object",
 						"properties": {
@@ -37,16 +43,21 @@ var RuleSchema = `
 							"type": "string"
 						  },
 						  "targets": {
-							"type": "string"
+							"type": "array",
+							"items": [
+							  {
+								"type": "string"
+							  }
+							]
 						  },
 						  "dedupEnbaled": {
-							"type": "string"
+							"type": "boolean"
 						  },
 						  "autoDownSample": {
-							"type": "string"
+							"type": "boolean"
 						  },
 						  "partialResponse": {
-							"type": "string"
+							"type": "boolean"
 						  }
 						},
 						"required": ["name"]

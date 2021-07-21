@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/infracloudio/krius/pkg/random"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -47,7 +48,10 @@ func (k KubeConfig) InitClient() error {
 
 func (k KubeConfig) CreateSecret(secretSpec map[string][]byte, secretName string) error {
 	secretsClient := clientset.CoreV1().Secrets(k.Namespace)
-
+	if k.HasSecret(secretName) {
+		secretName = secretName + random.RandStringRunes(4)
+	}
+	// Create secret
 	secret := &apiv1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
@@ -55,14 +59,19 @@ func (k KubeConfig) CreateSecret(secretSpec map[string][]byte, secretName string
 		},
 		Data: secretSpec,
 	}
-	// Create secret
-	_, err := secretsClient.Create(context.TODO(), secret, metav1.CreateOptions{
+	_, err := secretsClient.Create(context.Background(), secret, metav1.CreateOptions{
 		FieldManager: "objStore",
 	})
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (k KubeConfig) HasSecret(name string) bool {
+	secretsClient := clientset.CoreV1().Secrets(k.Namespace)
+	cm, err := secretsClient.Get(context.TODO(), name, metav1.GetOptions{})
+	return cm != nil && err == nil
 }
 
 func (k KubeConfig) CreateNSIfNotExist() error {
@@ -87,4 +96,17 @@ func (k KubeConfig) CheckNamespaceExist() error {
 		return err
 	}
 	return nil
+}
+
+func (k KubeConfig) GetServiceInfo(svcName string) []string {
+	list, err := clientset.CoreV1().Services(k.Namespace).Get(context.Background(), svcName, metav1.GetOptions{})
+	if err != nil {
+		return nil
+	}
+	targets := []string{}
+	for _, v := range list.Status.LoadBalancer.Ingress {
+		targets = append(targets, v.Hostname)
+	}
+	return targets
+
 }
