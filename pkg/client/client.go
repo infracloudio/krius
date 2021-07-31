@@ -1,4 +1,10 @@
-package spec
+package client
+
+// client to Preflight checks and installing tools on cluster
+type Client interface {
+	PreflightChecks(c *Config, clusterName string) ([]string, error)
+	InstallClient(clusterName string) (string, error)
+}
 
 // KriusConfig
 type Config struct {
@@ -55,7 +61,7 @@ type Thanos struct {
 	ObjStoreConfig string    `yaml:"objStoreConfig"`
 	Querier        Querier   `yaml:"querier"`
 	Querierfe      Querierfe `yaml:"querierFE"`
-	Reciever       Receiver  `yaml:"receiver"`
+	Receiver       Receiver  `yaml:"receiver"`
 	Compactor      Compactor `yaml:"compactor"`
 	Ruler          Ruler     `yaml:"ruler"`
 }

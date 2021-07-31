@@ -27,7 +27,7 @@ import (
 )
 
 // AddRepo adds repo with given name and url
-func (client *HelmClient) AddRepo() error {
+func (client *Client) AddRepo() error {
 	repoFile := client.Settings.RepositoryConfig
 
 	//Ensure the file directory exists as it is required for file locking
@@ -65,7 +65,7 @@ func (client *HelmClient) AddRepo() error {
 
 	c := repo.Entry{
 		Name: client.RepoName,
-		URL:  client.Url,
+		URL:  client.URL,
 	}
 
 	r, err := repo.NewChartRepository(&c, getter.All(client.Settings))
@@ -74,7 +74,7 @@ func (client *HelmClient) AddRepo() error {
 	}
 
 	if _, err := r.DownloadIndexFile(); err != nil {
-		err := errors.Wrapf(err, "looks like %q is not a valid chart repository or cannot be reached", client.Url)
+		err := errors.Wrapf(err, "looks like %q is not a valid chart repository or cannot be reached", client.URL)
 		return err
 	}
 
@@ -87,7 +87,7 @@ func (client *HelmClient) AddRepo() error {
 	return nil
 }
 
-func (client *HelmClient) UpdateRepo() error {
+func (client *Client) UpdateRepo() error {
 	repoFile := client.Settings.RepositoryConfig
 
 	f, err := repo.LoadFile(repoFile)
@@ -121,12 +121,12 @@ func (client *HelmClient) UpdateRepo() error {
 	return nil
 }
 
-func (c *HelmClient) ListDeployedReleases() ([]*release.Release, error) {
+func (c *Client) ListDeployedReleases() ([]*release.Release, error) {
 	listClient := action.NewList(c.ActionConfig)
 	return listClient.Run()
 }
 
-func (c *HelmClient) InstallChart(valueOpts *values.Options) (*string, error) {
+func (c *Client) InstallChart(valueOpts *values.Options) (*string, error) {
 	client := action.NewInstall(c.ActionConfig)
 
 	if client.Version == "" && client.Devel {
@@ -199,7 +199,7 @@ func (c *HelmClient) InstallChart(valueOpts *values.Options) (*string, error) {
 	return &release.Manifest, nil
 }
 
-func (c *HelmClient) UpgradeChart(valueOpts *values.Options) (*string, error) {
+func (c *Client) UpgradeChart(valueOpts *values.Options) (*string, error) {
 	client := action.NewUpgrade(c.ActionConfig)
 
 	if client.Version == "" && client.Devel {
@@ -264,6 +264,5 @@ func NewClientFromKubeConf(options *KubeConfClientOptions, settings *cli.EnvSett
 	if options.KubeContext != "" {
 		settings.KubeContext = options.KubeContext
 	}
-
 	return InitializeHelmAction(settings)
 }

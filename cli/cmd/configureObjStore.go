@@ -65,10 +65,10 @@ func init() {
 }
 
 func configureObjStore(cmd *cobra.Command, args []string) {
-	chartConfiguration := &helm.HelmConfig{
+	chartConfiguration := &helm.Config{
 		Repo: "bitnami",
 		Name: "thanos",
-		Url:  "https://charts.bitnami.com/bitnami",
+		URL:  "https://charts.bitnami.com/bitnami",
 		Args: args,
 		Cmd:  cmd,
 	}

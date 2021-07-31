@@ -18,10 +18,10 @@ func init() {
 
 func prometheusInstall(cmd *cobra.Command, args []string) {
 
-	chartConfiguration := &helm.HelmConfig{
+	chartConfiguration := &helm.Config{
 		Repo: "prometheus-community",
 		Name: "kube-prometheus-stack",
-		Url:  "https://prometheus-community.github.io/helm-charts",
+		URL:  "https://prometheus-community.github.io/helm-charts",
 		Args: args,
 		Cmd:  cmd,
 	}

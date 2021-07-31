@@ -24,7 +24,7 @@ func init() {
 }
 
 // Adds/Updates the repo and Installs the chart
-func addAndInstallChart(config *helm.HelmConfig) {
+func addAndInstallChart(config *helm.Config) {
 	helmClient, err := createHelmClientObject(config)
 	if err != nil {
 		log.Fatalf("Error creating helm client: %v", err)

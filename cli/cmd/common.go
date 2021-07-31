@@ -28,7 +28,7 @@ func (c *conf) getConf(valuesYaml string) *conf {
 	return c
 }
 
-func createHelmClientObject(helmConfig *helm.HelmConfig) (*helm.HelmClient, error) {
+func createHelmClientObject(helmConfig *helm.Config) (*helm.Client, error) {
 	var namespace string
 	var releaseName string
 	valuesYaml, _ := helmConfig.Cmd.Flags().GetString(configFile)
@@ -54,9 +54,9 @@ func createHelmClientObject(helmConfig *helm.HelmConfig) (*helm.HelmClient, erro
 	if err != nil {
 		log.Fatalf("helm initialize error: %v", err)
 	}
-	helmClient := helm.HelmClient{
+	helmClient := helm.Client{
 		RepoName:     helmConfig.Repo,
-		Url:          helmConfig.Url,
+		URL:          helmConfig.URL,
 		ReleaseName:  releaseName,
 		Namespace:    namespace,
 		ChartName:    helmConfig.Name,
