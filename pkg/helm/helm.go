@@ -126,26 +126,26 @@ func (client *Client) UpdateRepo() error {
 	return nil
 }
 
-func (c *Client) ListDeployedReleases() ([]*release.Release, error) {
-	listClient := action.NewList(c.ActionConfig)
+func (client *Client) ListDeployedReleases() ([]*release.Release, error) {
+	listClient := action.NewList(client.ActionConfig)
 	return listClient.Run()
 }
 
-func (c *Client) InstallChart(valueOpts *values.Options) (*string, error) {
-	client := action.NewInstall(c.ActionConfig)
+func (client *Client) InstallChart(valueOpts *values.Options) (*string, error) {
+	installClient := action.NewInstall(client.ActionConfig)
 
-	if client.Version == "" && client.Devel {
-		client.Version = ">0.0.0-0"
+	if installClient.Version == "" && installClient.Devel {
+		installClient.Version = ">0.0.0-0"
 	}
 
-	if c.ReleaseName != "" {
-		client.ReleaseName = c.ReleaseName
+	if client.ReleaseName != "" {
+		installClient.ReleaseName = client.ReleaseName
 	}
 
 	// Generate Random name for the release
-	client.GenerateName = true
-	client.ReleaseName, _, _ = client.NameAndChart([]string{c.ChartName})
-	cp, err := client.ChartPathOptions.LocateChart(fmt.Sprintf("%s/%s", c.RepoName, c.ChartName), c.Settings)
+	installClient.GenerateName = true
+	installClient.ReleaseName, _, _ = installClient.NameAndChart([]string{client.ChartName})
+	cp, err := installClient.ChartPathOptions.LocateChart(fmt.Sprintf("%s/%s", client.RepoName, client.ChartName), client.Settings)
 	if err != nil {
 		return nil, err
 	}
@@ -154,13 +154,13 @@ func (c *Client) InstallChart(valueOpts *values.Options) (*string, error) {
 	if valueOpts == nil {
 		valueOpts = &values.Options{}
 	}
-	p := getter.All(c.Settings)
+	p := getter.All(client.Settings)
 	vals, err := valueOpts.MergeValues(p)
 	if err != nil {
 		return nil, err
 	}
 	// Add args
-	if err := strvals.ParseInto(c.Args["set"], vals); err != nil {
+	if err := strvals.ParseInto(client.Args["set"], vals); err != nil {
 		m := errors.Wrap(err, "failed parsing --set data")
 		return nil, m
 	}
@@ -177,15 +177,15 @@ func (c *Client) InstallChart(valueOpts *values.Options) (*string, error) {
 
 	if req := chartRequested.Metadata.Dependencies; req != nil {
 		if err := action.CheckDependencies(chartRequested, req); err != nil {
-			if client.DependencyUpdate {
+			if installClient.DependencyUpdate {
 				man := &downloader.Manager{
 					Out:              os.Stdout,
 					ChartPath:        cp,
-					Keyring:          client.ChartPathOptions.Keyring,
+					Keyring:          installClient.ChartPathOptions.Keyring,
 					SkipUpdate:       false,
 					Getters:          p,
-					RepositoryConfig: c.Settings.RepositoryConfig,
-					RepositoryCache:  c.Settings.RepositoryCache,
+					RepositoryConfig: client.Settings.RepositoryConfig,
+					RepositoryCache:  client.Settings.RepositoryCache,
 				}
 				if err := man.Update(); err != nil {
 					return nil, err
@@ -196,34 +196,34 @@ func (c *Client) InstallChart(valueOpts *values.Options) (*string, error) {
 		}
 	}
 
-	client.Namespace = c.Settings.Namespace()
-	release, err := client.Run(chartRequested, vals)
+	installClient.Namespace = client.Settings.Namespace()
+	release, err := installClient.Run(chartRequested, vals)
 	if err != nil {
 		return nil, err
 	}
 	return &release.Manifest, nil
 }
 
-func (c *Client) UpgradeChart(valueOpts *values.Options) (*string, error) {
-	client := action.NewUpgrade(c.ActionConfig)
+func (client *Client) UpgradeChart(valueOpts *values.Options) (*string, error) {
+	upgradeClient := action.NewUpgrade(client.ActionConfig)
 
-	if client.Version == "" && client.Devel {
-		client.Version = ">0.0.0-0"
+	if upgradeClient.Version == "" && upgradeClient.Devel {
+		upgradeClient.Version = ">0.0.0-0"
 	}
-	cp, err := client.ChartPathOptions.LocateChart(fmt.Sprintf("%s/%s", c.RepoName, c.ChartName), c.Settings)
+	cp, err := upgradeClient.ChartPathOptions.LocateChart(fmt.Sprintf("%s/%s", client.RepoName, client.ChartName), client.Settings)
 	if err != nil {
 		return nil, err
 	}
 
 	debug("CHART PATH: %s\n", cp)
-	p := getter.All(c.Settings)
+	p := getter.All(client.Settings)
 	vals, err := valueOpts.MergeValues(p)
 
 	if err != nil {
 		return nil, err
 	}
 	// Add args
-	if err := strvals.ParseInto(c.Args["set"], vals); err != nil {
+	if err := strvals.ParseInto(client.Args["set"], vals); err != nil {
 		m := errors.Wrap(err, "failed parsing --set data")
 		return nil, m
 	}
@@ -238,12 +238,13 @@ func (c *Client) UpgradeChart(valueOpts *values.Options) (*string, error) {
 			return nil, err
 		}
 	}
-	release, err := client.Run(c.ReleaseName, chartRequested, vals)
+	release, err := upgradeClient.Run(client.ReleaseName, chartRequested, vals)
 	if err != nil {
 		return nil, err
 	}
 	return &release.Manifest, nil
 }
+
 func isChartInstallable(ch *chart.Chart) (bool, error) {
 	switch ch.Metadata.Type {
 	case "", "application":
