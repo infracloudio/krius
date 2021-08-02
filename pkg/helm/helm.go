@@ -42,7 +42,12 @@ func (client *Client) AddRepo() error {
 	defer cancel()
 	locked, err := fileLock.TryLockContext(lockCtx, time.Second)
 	if err == nil && locked {
-		defer fileLock.Unlock()
+		defer func() {
+			err = fileLock.Unlock()
+			if err != nil {
+				log.Println(err)
+			}
+		}()
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -249,7 +254,10 @@ func isChartInstallable(ch *chart.Chart) (bool, error) {
 
 func debug(format string, v ...interface{}) {
 	format = fmt.Sprintf("[debug] %s\n", format)
-	log.Output(2, fmt.Sprintf(format, v...))
+	err := log.Output(2, fmt.Sprintf(format, v...))
+	if err != nil {
+		log.Printf("Error while logging: %v", err)
+	}
 }
 
 func InitializeHelmAction(settings *cli.EnvSettings) (*action.Configuration, error) {

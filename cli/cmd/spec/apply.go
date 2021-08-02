@@ -24,7 +24,10 @@ var applyCmd = &cobra.Command{
 
 func init() {
 	specCmd.AddCommand(applyCmd)
-	addSpecApplyFlags(applyCmd)
+	err := addSpecApplyFlags(applyCmd)
+	if err != nil {
+		log.Printf("Error adding flags: %v", err)
+	}
 }
 
 func addSpecApplyFlags(cmd *cobra.Command) error {
