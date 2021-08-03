@@ -3,11 +3,10 @@ package main
 import (
 	"github.com/infracloudio/krius/cli/cmd"
 	_ "github.com/infracloudio/krius/cli/cmd/spec"
-	random "github.com/infracloudio/krius/pkg/random"
+	randomSeed "github.com/infracloudio/krius/pkg/utils"
 )
 
 func main() {
-	random.Init()
-
+	randomSeed.Init()
 	cmd.Execute()
 }

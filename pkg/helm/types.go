@@ -7,8 +7,8 @@ import (
 	"helm.sh/helm/v3/pkg/cli/values"
 )
 
-type HelmClient struct {
-	Url          string
+type Client struct {
+	URL          string
 	RepoName     string
 	ChartName    string
 	ReleaseName  string
@@ -17,10 +17,10 @@ type HelmClient struct {
 	Settings     *cli.EnvSettings
 	ActionConfig *action.Configuration
 }
-type HelmConfig struct {
+type Config struct {
 	Repo       string
 	Name       string
-	Url        string
+	URL        string
 	Args       []string
 	Cmd        *cobra.Command
 	ValuesYaml string

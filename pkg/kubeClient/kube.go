@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/infracloudio/krius/pkg/random"
+	random "github.com/infracloudio/krius/pkg/utils"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -19,6 +19,18 @@ var clientset *kubernetes.Clientset
 type KubeConfig struct {
 	Namespace string
 	Context   string
+}
+
+func GetKubeClient(namespace, context string) (*KubeConfig, error) {
+	kubeClient := KubeConfig{
+		Namespace: namespace,
+		Context:   context,
+	}
+	err := kubeClient.InitClient()
+	if err != nil {
+		return nil, err
+	}
+	return &kubeClient, nil
 }
 
 func BuildConfigFromFlags(context, kubeconfigPath string) (*rest.Config, error) {

@@ -8,13 +8,16 @@ func addInstallFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("namespace", "n", "default", "namespace in which the chart need to be installed")
 	cmd.Flags().StringP("release", "r", "default", "release name to be used for the specific install")
 }
-func getVarFromCmd(cmd *cobra.Command, envVar, defaultValue string) string {
-	envVar, err := cmd.Flags().GetString(envVar)
-	if err != nil {
-		envVar = defaultValue
-	}
-	return envVar
-}
+
+// unused for now
+// func getVarFromCmd(cmd *cobra.Command, envVar, defaultValue string) string {
+// 	envVar, err := cmd.Flags().GetString(envVar)
+// 	if err != nil {
+// 		envVar = defaultValue
+// 	}
+// 	return envVar
+// }
+
 func addConfigureObjStoreFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("config-file", "c", "", "config file path")
 	cmd.Flags().StringP("namespace", "n", "", "namespace in which the chart has installed")

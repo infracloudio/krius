@@ -13,7 +13,7 @@ var thanosCmd = &cobra.Command{
 	Short: "Install thanos component",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			return errors.New("Missing argument to configure thanos as: sidecar, receiver\n\n For example: krius install thanos sidecar\n")
+			return errors.New("missing argument to configure thanos as: sidecar, receiver\n\n For example: krius install thanos sidecar")
 		}
 		return nil
 	},
@@ -26,10 +26,10 @@ func init() {
 }
 
 func thanosInstall(cmd *cobra.Command, args []string) {
-	helmConfiguration := &helm.HelmConfig{
+	helmConfiguration := &helm.Config{
 		Repo: "bitnami",
 		Name: "thanos",
-		Url:  "https://charts.bitnami.com/bitnami",
+		URL:  "https://charts.bitnami.com/bitnami",
 	}
-	fmt.Printf("Need to implement thanos %s, %s and %s", helmConfiguration.Name, helmConfiguration.Repo, helmConfiguration.Url)
+	fmt.Printf("Need to implement thanos %s, %s and %s", helmConfiguration.Name, helmConfiguration.Repo, helmConfiguration.URL)
 }

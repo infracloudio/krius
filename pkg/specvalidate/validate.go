@@ -1,7 +1,6 @@
 package specvalidate
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 
@@ -13,7 +12,7 @@ func GetLoaders(configPath string) (gojsonschema.JSONLoader, gojsonschema.JSONLo
 	ruleSchemaLoader := gojsonschema.NewBytesLoader([]byte(RuleSchema))
 	loader, err := jsonLoader(configPath)
 	if err != nil {
-		return nil, nil, errors.New(fmt.Sprintf("%s: unable to load schema ref: %s", configPath, err))
+		return nil, nil, fmt.Errorf("%s: unable to load schema ref: %s", configPath, err)
 	}
 	return loader, ruleSchemaLoader, nil
 }
