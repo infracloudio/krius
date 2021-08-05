@@ -91,7 +91,7 @@ func (prom *Prometheus) PreflightChecks(clusterConfig *Config, clusterName strin
 	return promErrs, nil
 }
 
-func (prom *Prometheus) InstallClient(clusterName string) (string, error) {
+func (prom *Prometheus) InstallClient(clusterName string, receiveEndpoint []string) (string, error) {
 	chartConfiguration := &helm.Config{
 		Repo: "prometheus-community",
 		Name: "kube-prometheus-stack",
@@ -114,7 +114,13 @@ func (prom *Prometheus) InstallClient(clusterName string) (string, error) {
 			target := GetPrometheusTargets(clusterName, prom.Namespace, prom.Name)
 			return target[0], nil
 
-		} // TODO else mode is receiver
+		}
+		Values := createPrometheusReceiverValues(receiveEndpoint[0])
+		_, err = helmClient.InstallChart(Values)
+		if err != nil {
+			log.Printf("Error installing prometheus: %s", err)
+			return "", err
+		}
 
 	} else {
 		// prometheus is already installed, check the release exist & mode, then upgrade the chart
@@ -141,7 +147,13 @@ func (prom *Prometheus) InstallClient(clusterName string) (string, error) {
 				}
 				return "", errors.New("Error getting sidecar target info")
 			}
-			// TODO else mode is receiver
+			Values := createPrometheusReceiverValues(prom.ReceiveReference)
+			_, err = helmClient.UpgradeChart(Values)
+			if err != nil {
+				log.Printf("Error installing prometheus: %s", err)
+				return "", err
+			}
+
 		} else {
 			errMsg := fmt.Sprintf("Release %s doesn't exist", helmClient.ReleaseName)
 			return "", errors.New(errMsg)

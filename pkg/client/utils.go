@@ -50,6 +50,15 @@ func GetPrometheusTargets(clusterName, namespace, promName string) []string {
 	}
 	return kubeClient.GetServiceInfo(promName + "-kube-prometheus-thanos-external")
 }
+
+func GetReceiveEndpoint(clusterName, namespace string) []string {
+	kubeClient, err := GetKubeClient(namespace, clusterName)
+	if err != nil {
+		return nil
+	}
+	return kubeClient.GetServiceInfo("thanos-receive")
+}
+
 func createSidecarValuesMap(secretName string) *values.Options {
 	var valueOpts values.Options
 	valueOpts.Values = []string{fmt.Sprintf("prometheus.prometheusSpec.thanos.image=%s", "thanosio/thanos:v0.21.0-rc.0"),
@@ -61,6 +70,13 @@ func createSidecarValuesMap(secretName string) *values.Options {
 	return &valueOpts
 }
 
+func createPrometheusReceiverValues(receiveReference string) *values.Options {
+	var valueOpts values.Options
+	valueOpts.Values = []string{
+		fmt.Sprintf("prometheus.prometheusSpec.remoteWrite[0].url=http://%s/api/v1/receive", receiveReference),
+	}
+	return &valueOpts
+}
 func createThanosValuesMap(thanos Thanos) *values.Options {
 	var valueOpts values.Options
 	targets := "{" + strings.Join(thanos.Querier.Targets, ",") + "}"
@@ -75,11 +91,17 @@ func createThanosValuesMap(thanos Thanos) *values.Options {
 	extraFlags += "}"
 	valueOpts.Values = []string{
 		fmt.Sprintf("existingObjstoreSecret=%s", thanos.ObjStoreConfig),
-		fmt.Sprintf("query.stores=%s", targets),
 		fmt.Sprintf("storegateway.enabled=%s", "true"),
 		fmt.Sprintf("query.extraFlags=%s", extraFlags),
 		fmt.Sprintf("queryFrontend.enabled=%s", "true")}
 
+	if thanos.Receiver.Name != "" {
+		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("receive.enabled=%s", "true"))
+		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("receive.service.type=%s", "LoadBalancer"))
+	} else {
+		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("query.stores=%s", targets))
+
+	}
 	if thanos.Compactor.Name != "" {
 		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("compactor.enabled=%s", "true"))
 		// valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("compactor.podLabels=%s", "{'key':'"+thanos.Compactor.Name+"'}"))

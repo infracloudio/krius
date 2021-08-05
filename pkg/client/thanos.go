@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func NewThanosClient(thanosCluster *Cluster) (*Thanos, error) {
+func NewThanosClient(thanosCluster *Cluster) (Client, error) {
 	thanosConfig, err := GetConfig(thanosCluster.Data, "thanos")
 	if err != nil {
 		log.Printf("Error getting config %s", err)
@@ -26,11 +26,19 @@ func NewThanosClient(thanosCluster *Cluster) (*Thanos, error) {
 }
 
 func (t *Thanos) PreflightChecks(clusterConfig *Config, clusterName string) ([]string, error) {
+	thanosErrs := []string{}
+
+	if clusterConfig.Order == 2 {
+		receiver := Receiver{}
+		if (t.Receiver) == receiver {
+			e := fmt.Sprintf("cluster.%s: %s,", clusterName, "Receiver not set")
+			thanosErrs = append(thanosErrs, e)
+		}
+	}
 	kubeClient, err := k.GetKubeClient(t.Namespace, clusterName)
 	if err != nil {
 		return nil, err
 	}
-	thanosErrs := []string{}
 	err = kubeClient.CreateNSIfNotExist()
 	if err != nil {
 		e := fmt.Sprintf("cluster.%s: %s,", clusterName, err)
@@ -62,7 +70,7 @@ func (t *Thanos) PreflightChecks(clusterConfig *Config, clusterName string) ([]s
 	return thanosErrs, nil
 }
 
-func (t *Thanos) InstallClient(clusterName string) (string, error) {
+func (t *Thanos) InstallClient(clusterName string, targets []string) (string, error) {
 
 	chartConfiguration := &helm.Config{
 		Repo: "bitnami",
@@ -84,9 +92,16 @@ func (t *Thanos) InstallClient(clusterName string) (string, error) {
 		extraFlags = append(extraFlags, "--query.partial-response")
 	}
 	t.Querier.ExtraFlags = extraFlags
+	t.Querier.Targets = targets
 	Values := createThanosValuesMap(*t)
 	_, err = helmClient.InstallChart(Values)
-	log.Println("error installing Thanos", err)
-	return "", err
-
+	if err != nil {
+		log.Printf("Error installing prometheus: %s", err)
+		return "", err
+	}
+	if t.Receiver.Name == "" { // sidecar mode
+		return "", nil
+	}
+	receiveEndpoint := GetReceiveEndpoint(clusterName, t.Namespace)
+	return receiveEndpoint[0], nil
 }

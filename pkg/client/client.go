@@ -3,14 +3,14 @@ package client
 // client to Preflight checks and installing tools on cluster
 type Client interface {
 	PreflightChecks(c *Config, clusterName string) ([]string, error)
-	InstallClient(clusterName string) (string, error)
+	InstallClient(clusterName string, targets []string) (string, error)
 }
 
 // KriusConfig
 type Config struct {
 	Clusters            []Cluster        `yaml:"clusters"`
 	ObjStoreConfigslist []ObjStoreConfig `yaml:"objStoreConfigslist"`
-	Order               int
+	Order               int              //if 1 then mode is sidecar else mode is receiver
 }
 
 // Cluster
