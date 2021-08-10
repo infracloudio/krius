@@ -83,7 +83,7 @@ func (t *Thanos) InstallClient(clusterName string, targets []string) (string, er
 		return "", err
 	}
 	helmClient.ChartName = "thanos"
-	helmClient.ReleaseName = "thanos"
+	helmClient.ReleaseName = t.Name
 	var extraFlags []string
 	if t.Querier.AutoDownsample {
 		extraFlags = append(extraFlags, "--query.auto-downsampling")
@@ -103,5 +103,9 @@ func (t *Thanos) InstallClient(clusterName string, targets []string) (string, er
 		return "", nil
 	}
 	receiveEndpoint := GetReceiveEndpoint(clusterName, t.Namespace)
-	return receiveEndpoint[0], nil
+	if len(receiveEndpoint) > 0 {
+		return receiveEndpoint[0], nil
+
+	}
+	return "", nil
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/infracloudio/krius/pkg/helm"
 	k "github.com/infracloudio/krius/pkg/kubeClient"
 	"gopkg.in/yaml.v2"
+	"helm.sh/helm/v3/pkg/cli/values"
 )
 
 type Objspec struct {
@@ -115,7 +116,10 @@ func (prom *Prometheus) InstallClient(clusterName string, receiveEndpoint []stri
 			return target[0], nil
 
 		}
-		Values := createPrometheusReceiverValues(receiveEndpoint[0])
+		Values := &values.Options{}
+		if len(receiveEndpoint) > 0 && receiveEndpoint[0] != "" {
+			Values = createPrometheusReceiverValues(receiveEndpoint[0])
+		}
 		_, err = helmClient.InstallChart(Values)
 		if err != nil {
 			log.Printf("Error installing prometheus: %s", err)
