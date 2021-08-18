@@ -37,7 +37,7 @@ type BucketConfig struct {
 	AccessKey  string `yaml:"accessKey"`
 	SecretKey  string `yaml:"secretKey"`
 	Insecure   bool   `yaml:"insecure"`
-	Trace      Trace  `yaml:"trace"`
+	Trace      Trace  `yaml:"trace,omitempty"`
 }
 
 type Trace struct {
@@ -81,16 +81,20 @@ type Querierfe struct {
 // Querier
 type Querier struct {
 	Targets         []string `yaml:"targets"`
-	DedupEnbaled    string   `yaml:"dedupEnbaled"`
+	DedupEnbaled    bool     `yaml:"dedupEnbaled"`
 	AutoDownsample  bool     `yaml:"autoDownSample"`
 	PartialResponse bool     `yaml:"partialResponse"`
 	Name            string   `yaml:"name"`
-	ExtraFlags      []string
 }
 
 // Compactor
 type Compactor struct {
-	Name string `yaml:"name"`
+	Name                   string `yaml:"name"`
+	Downsampling           bool   `yaml:"downsampling"`
+	Deduplication          bool   `yaml:"deduplication"`
+	RetentionResolutionRaw string `yaml:"retentionResolutionRaw"`
+	RetentionResolution5m  string `yaml:"retentionResolution5m"`
+	RetentionResolution1h  string `yaml:"retentionResolution1h"`
 }
 
 // Ruler

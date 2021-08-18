@@ -84,28 +84,30 @@ func (t *Thanos) InstallClient(clusterName string, targets []string) (string, er
 	}
 	helmClient.ChartName = "thanos"
 	helmClient.ReleaseName = t.Name
-	var extraFlags []string
-	if t.Querier.AutoDownsample {
-		extraFlags = append(extraFlags, "--query.auto-downsampling")
-	}
-	if t.Querier.PartialResponse {
-		extraFlags = append(extraFlags, "--query.partial-response")
-	}
-	t.Querier.ExtraFlags = extraFlags
-	t.Querier.Targets = targets
-	Values := createThanosValuesMap(*t)
-	_, err = helmClient.InstallChart(Values)
+	err = helmClient.AddRepo()
 	if err != nil {
-		log.Printf("Error installing prometheus: %s", err)
+		log.Fatalf("helm add repo error: %v", err)
+		return "", err
+	}
+	err = helmClient.UpdateRepo()
+	if err != nil {
+		log.Fatalf("helm update repo error: %v", err)
+		return "", err
+	}
+	t.Querier.Targets = targets
+	values := t.createThanosValuesMap()
+
+	_, err = helmClient.InstallChart(values)
+	if err != nil {
+		log.Printf("Error installing thanos: %s", err)
 		return "", err
 	}
 	if t.Receiver.Name == "" { // sidecar mode
 		return "", nil
 	}
-	receiveEndpoint := GetReceiveEndpoint(clusterName, t.Namespace)
+	receiveEndpoint := getReceiveEndpoint(clusterName, t.Namespace, t.Name)
 	if len(receiveEndpoint) > 0 {
 		return receiveEndpoint[0], nil
-
 	}
 	return "", nil
 }

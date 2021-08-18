@@ -115,9 +115,12 @@ func (k KubeConfig) GetServiceInfo(svcName string) []string {
 	if err != nil {
 		return nil
 	}
-	targets := []string{}
+	var targets []string
 	for _, v := range list.Status.LoadBalancer.Ingress {
 		targets = append(targets, v.Hostname)
+	}
+	if len(targets) == 0 {
+		targets = append(targets, list.Spec.ClusterIP)
 	}
 	return targets
 

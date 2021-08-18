@@ -8,7 +8,6 @@ import (
 	"github.com/infracloudio/krius/pkg/helm"
 	k "github.com/infracloudio/krius/pkg/kubeClient"
 	"gopkg.in/yaml.v2"
-	"helm.sh/helm/v3/pkg/cli/values"
 )
 
 type Objspec struct {
@@ -98,28 +97,40 @@ func (prom *Prometheus) InstallClient(clusterName string, receiveEndpoint []stri
 		Name: "kube-prometheus-stack",
 		URL:  "https://prometheus-community.github.io/helm-charts",
 	}
+
 	helmClient, err := createHelmClientObject(clusterName, prom.Namespace, chartConfiguration)
 	if err != nil {
 		return "", err
 	}
 	helmClient.ReleaseName = prom.Name
 	helmClient.Namespace = prom.Namespace
+
+	err = helmClient.AddRepo()
+	if err != nil {
+		log.Fatalf("helm add repo error: %v", err)
+		return "", err
+	}
+	err = helmClient.UpdateRepo()
+	if err != nil {
+		log.Fatalf("helm update repo error: %v", err)
+		return "", err
+	}
 	if prom.Install {
 		if prom.Mode == "sidecar" {
-			Values := createSidecarValuesMap(prom.ObjStoreConfig)
+			Values := prom.createPrometheusSidecarValues()
 			_, err = helmClient.InstallChart(Values)
 			if err != nil {
 				log.Printf("Error installing prometheus: %s", err)
 				return "", err
 			}
-			target := GetPrometheusTargets(clusterName, prom.Namespace, prom.Name)
-			return target[0], nil
+			target := getPrometheusTargets(clusterName, prom.Namespace, prom.Name)
+			if len(target) > 0 {
+				return target[0], nil
+			}
+			return "", errors.New("error getting sidecar target info")
 
 		}
-		Values := &values.Options{}
-		if len(receiveEndpoint) > 0 && receiveEndpoint[0] != "" {
-			Values = createPrometheusReceiverValues(receiveEndpoint[0])
-		}
+		Values := prom.createPrometheusReceiverValues(receiveEndpoint)
 		_, err = helmClient.InstallChart(Values)
 		if err != nil {
 			log.Printf("Error installing prometheus: %s", err)
@@ -140,18 +151,18 @@ func (prom *Prometheus) InstallClient(clusterName string, receiveEndpoint []stri
 		}
 		if exists {
 			if prom.Mode == "sidecar" {
-				Values := createSidecarValuesMap(prom.ObjStoreConfig)
+				Values := prom.createPrometheusSidecarValues()
 				_, err = helmClient.UpgradeChart(Values)
 				if err != nil {
 					return "", err
 				}
-				target := GetPrometheusTargets(clusterName, prom.Namespace, prom.Name)
+				target := getPrometheusTargets(clusterName, prom.Namespace, prom.Name)
 				if len(target) > 0 {
 					return target[0], nil
 				}
-				return "", errors.New("Error getting sidecar target info")
+				return "", errors.New("error getting sidecar target info")
 			}
-			Values := createPrometheusReceiverValues(prom.ReceiveReference)
+			Values := prom.createPrometheusReceiverValues(receiveEndpoint)
 			_, err = helmClient.UpgradeChart(Values)
 			if err != nil {
 				log.Printf("Error installing prometheus: %s", err)
@@ -164,18 +175,4 @@ func (prom *Prometheus) InstallClient(clusterName string, receiveEndpoint []stri
 		}
 	}
 	return "", err
-}
-
-func createSecretforObjStore(configType string, bucConfig BucketConfig) (map[string][]byte, error) {
-	//create a secret for bucket config
-	secretSpec := map[string][]byte{}
-	var obj Objspec
-	obj.ConfigType = configType
-	obj.Config = ObjBucketConfig(bucConfig)
-	objYaml, err := yaml.Marshal(obj)
-	if err != nil {
-		return nil, err
-	}
-	secretSpec["objstore.yml"] = objYaml
-	return secretSpec, nil
 }
