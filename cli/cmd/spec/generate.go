@@ -16,9 +16,31 @@ var generateCmd = &cobra.Command{
 
 func init() {
 	specCmd.AddCommand(generateCmd)
+	generateCmd.Flags().StringP("file", "f", "", "file Path to genrate the config file")
+	generateCmd.Flags().StringP("mode", "m", "", "Mode --> reciever/sidecar")
+	generateCmd.MarkFlagRequired("mode")
+}
+
+func createFile(filePath string, content string) {
+	file, err := os.Create(filePath)
+	if err != nil {
+		log.Fatalf("failed creating file: %s", err)
+	}
+	_, err = file.WriteString("---\n" + content)
+	if err != nil {
+		log.Fatalf("Failed to write yaml file %s", err)
+	}
+	defer file.Close()
 }
 
 func createConfigYAML(cmd *cobra.Command, args []string) {
+	mode, err := cmd.Flags().GetString("mode")
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	} else if mode != "reciever" && mode != "sidecar" {
+		log.Fatalf("error: invalid mode: %s", mode)
+	}
+
 	bucketweb := Bucketweb{Enabled: true}
 
 	reciver := Reciever{Name: "#Name of your Reciver"}
@@ -50,19 +72,18 @@ func createConfigYAML(cmd *cobra.Command, args []string) {
 	grafana.Setup = setup
 
 	cluster1 := Cluster{}
-	cluster1.Name = "cluster1"
+	cluster1.Name = "#Name of your Prometheus Cluster"
 	cluster1.Type = "prometheus"
-	cluster1.Data = map[string]interface{}{"install": false, "name": "prometheus1", "namespace": "monitoring", "mode": "sidecar", "objStoreConfig": "bucketcluster"}
+	cluster1.Data = map[string]interface{}{"install": false, "name": "#Name Of Prometheus Cluster", "namespace": "#Namespace Name", "objStoreConfig": "bucketcluster", "mode": mode}
 
 	cluster2 := Cluster{}
-	cluster2.Name = "cluster2"
-	cluster2.Type = "prometheus"
-	cluster2.Data = map[string]interface{}{"install": false, "name": "prometheus2", "namespace": "monitoring", "mode": "sidecar", "objStoreConfig": "bucketcluster"}
+	cluster2.Name = "#Name of your Thanos Cluster"
+	cluster2.Type = "thanos"
+	cluster2.Data = map[string]interface{}{"name": "#Name Of Thanos Cluster", "querier": querier, "querierFE": querierfe, "compactor": compactor, "ruler": ruler}
 
-	cluster3 := Cluster{}
-	cluster3.Name = "cluster3"
-	cluster3.Type = "thanos"
-	cluster3.Data = map[string]interface{}{"name": "thanos-ag1", "querier": querier, "querier-fe": querierfe, "reciever": reciver, "compactor": compactor, "ruler": ruler}
+	if mode == "reciever" {
+		cluster2.Data["reciever"] = reciver
+	}
 
 	prom := Prometheus{}
 	prom.Name = "cluster1"
@@ -88,13 +109,14 @@ func createConfigYAML(cmd *cobra.Command, args []string) {
 	buckerconfig.Trace.Enable = true
 
 	objstore := ObjStoreConfigslist{}
+	objstore.Name = "bucketcluster"
+	objstore.Type = "s3"
 	objstore.Bucketweb = bucketweb
 	objstore.Config = buckerconfig
 
 	config := Config{}
 	config.Clusters = append(config.Clusters, cluster1)
 	config.Clusters = append(config.Clusters, cluster2)
-	config.Clusters = append(config.Clusters, cluster3)
 	config.ObjStoreConfigslist = append(config.ObjStoreConfigslist, objstore)
 
 	configYAML, err := yaml.Marshal(&config)
@@ -102,15 +124,10 @@ func createConfigYAML(cmd *cobra.Command, args []string) {
 		log.Fatalf("error: %v", err)
 	}
 
-	configFile, err := os.Create("config.yaml")
-	if err != nil {
-		log.Fatalf("failed creating file: %s", err)
+	file, err := cmd.Flags().GetString("file")
+	if file == "" {
+		createFile("config.yaml", string(configYAML))
+	} else {
+		createFile(file, string(configYAML))
 	}
-
-	_, err = configFile.WriteString("---\n" + string(configYAML))
-
-	if err != nil {
-		log.Fatalf("Failed to write yaml file %s", err)
-	}
-	defer configFile.Close()
 }
