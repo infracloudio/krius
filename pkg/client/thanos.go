@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func NewThanosClient(thanosCluster *Cluster) (*Thanos, error) {
+func NewThanosClient(thanosCluster *Cluster) (Client, error) {
 	thanosConfig, err := GetConfig(thanosCluster.Data, "thanos")
 	if err != nil {
 		log.Printf("Error getting config %s", err)
@@ -26,11 +26,19 @@ func NewThanosClient(thanosCluster *Cluster) (*Thanos, error) {
 }
 
 func (t *Thanos) PreflightChecks(clusterConfig *Config, clusterName string) ([]string, error) {
+	thanosErrs := []string{}
+
+	if clusterConfig.Order == 2 {
+		receiver := Receiver{}
+		if (t.Receiver) == receiver {
+			e := fmt.Sprintf("cluster.%s: %s,", clusterName, "Receiver not set")
+			thanosErrs = append(thanosErrs, e)
+		}
+	}
 	kubeClient, err := k.GetKubeClient(t.Namespace, clusterName)
 	if err != nil {
 		return nil, err
 	}
-	thanosErrs := []string{}
 	err = kubeClient.CreateNSIfNotExist()
 	if err != nil {
 		e := fmt.Sprintf("cluster.%s: %s,", clusterName, err)
@@ -62,7 +70,7 @@ func (t *Thanos) PreflightChecks(clusterConfig *Config, clusterName string) ([]s
 	return thanosErrs, nil
 }
 
-func (t *Thanos) InstallClient(clusterName string) (string, error) {
+func (t *Thanos) InstallClient(clusterName string, targets []string) (string, error) {
 
 	chartConfiguration := &helm.Config{
 		Repo: "bitnami",
@@ -75,18 +83,31 @@ func (t *Thanos) InstallClient(clusterName string) (string, error) {
 		return "", err
 	}
 	helmClient.ChartName = "thanos"
-	helmClient.ReleaseName = "thanos"
-	var extraFlags []string
-	if t.Querier.AutoDownsample {
-		extraFlags = append(extraFlags, "--query.auto-downsampling")
+	helmClient.ReleaseName = t.Name
+	err = helmClient.AddRepo()
+	if err != nil {
+		log.Fatalf("helm add repo error: %v", err)
+		return "", err
 	}
-	if t.Querier.PartialResponse {
-		extraFlags = append(extraFlags, "--query.partial-response")
+	err = helmClient.UpdateRepo()
+	if err != nil {
+		log.Fatalf("helm update repo error: %v", err)
+		return "", err
 	}
-	t.Querier.ExtraFlags = extraFlags
-	Values := createThanosValuesMap(*t)
-	_, err = helmClient.InstallChart(Values)
-	log.Println("error installing Thanos", err)
-	return "", err
+	t.Querier.Targets = targets
+	values := t.createThanosValuesMap()
 
+	_, err = helmClient.InstallChart(values)
+	if err != nil {
+		log.Printf("Error installing thanos: %s", err)
+		return "", err
+	}
+	if t.Receiver.Name == "" { // sidecar mode
+		return "", nil
+	}
+	receiveEndpoint := getReceiveEndpoint(clusterName, t.Namespace, t.Name)
+	if len(receiveEndpoint) > 0 {
+		return receiveEndpoint[0], nil
+	}
+	return "", nil
 }

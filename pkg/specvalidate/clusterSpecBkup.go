@@ -1,6 +1,6 @@
 package specvalidate
 
-var RuleSchema = `
+var RuleSchemaBkup = `
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"type": "object",
@@ -202,6 +202,16 @@ var RuleSchema = `
 					  }
 					},
 					"additionalProperties": false,
+					"if": {
+					  "properties": { "mode": { "const": "receiver" } },
+					  "required": ["mode"]
+					},
+					"then": {
+					  "required": ["receiveReference"]
+					},
+					"else": {
+					  "not": { "required": ["receiveReference"] }
+					},
 					"required": ["name", "namespace", "mode", "objStoreConfig"]
 				  }
 				}

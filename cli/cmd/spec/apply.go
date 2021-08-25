@@ -105,6 +105,7 @@ func applySpec(cmd *cobra.Command, args []string) (err error) {
 	}
 	log.Println("Preflight checks passed")
 	var targets []string
+	var receiveEndpoints []string
 	for _, cluster := range config.Clusters {
 		switch cluster.Type {
 		case "prometheus":
@@ -112,7 +113,7 @@ func applySpec(cmd *cobra.Command, args []string) (err error) {
 			if err != nil {
 				return err
 			}
-			target, err := pc.InstallClient(cluster.Name)
+			target, err := pc.InstallClient(cluster.Name, receiveEndpoints)
 			if err != nil {
 				return err
 			}
@@ -122,11 +123,12 @@ func applySpec(cmd *cobra.Command, args []string) (err error) {
 			if err != nil {
 				return err
 			}
-			tc.Querier.Targets = targets
-			_, err = tc.InstallClient(cluster.Name)
+			endpoint, err := tc.InstallClient(cluster.Name, targets)
 			if err != nil {
 				return err
 			}
+			receiveEndpoints = append(receiveEndpoints, endpoint)
+
 		case "grafana":
 		}
 	}
