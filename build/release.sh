@@ -8,7 +8,7 @@ fi
 
 
 if [[ -z ${GITHUB_TOKEN} ]]; then
-    echo "GITHUB_TOKEN not set. Usage: GITHUB_TOKEN=<TOKEN> ./hack/release.sh"
+    echo "GITHUB_TOKEN not set. Usage: GITHUB_TOKEN=<TOKEN>"
     exit 1
 fi
 
