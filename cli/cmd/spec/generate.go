@@ -17,7 +17,7 @@ var generateCmd = &cobra.Command{
 func init() {
 	specCmd.AddCommand(generateCmd)
 	generateCmd.Flags().StringP("file", "f", "", "file Path to genrate the config file")
-	generateCmd.Flags().StringP("mode", "m", "", "Mode --> reciever/sidecar")
+	generateCmd.Flags().StringP("mode", "m", "", "Mode --> receiver/sidecar")
 	generateCmd.MarkFlagRequired("mode")
 }
 
@@ -37,18 +37,15 @@ func createConfigYAML(cmd *cobra.Command, args []string) {
 	mode, err := cmd.Flags().GetString("mode")
 	if err != nil {
 		log.Fatalf("error: %v", err)
-	} else if mode != "reciever" && mode != "sidecar" {
+	} else if mode != "receiver" && mode != "sidecar" {
 		log.Fatalf("error: invalid mode: %s", mode)
 	}
 
 	bucketweb := Bucketweb{Enabled: true}
 
-	reciver := Reciever{Name: "#Name of your Reciver"}
-
-	setup := Setup{}
-	setup.Enabled = true
-	setup.Name = "#Name of Your Grafana Setup"
-	setup.Namespace = "#Your Grafana Namesapce"
+	receiver := Receiver{
+		Name: "receiver",
+	}
 
 	ruler := Ruler{}
 	ruler.Alertmanagers = []string{"http://kube-prometheus-alertmanager.monitoring.svc.cluster.local:9093"}
@@ -56,49 +53,38 @@ func createConfigYAML(cmd *cobra.Command, args []string) {
 	ruler_str_yaml, err := yaml.Marshal(&ruler_str)
 	ruler.Config = string(ruler_str_yaml)
 
-	compactor := Compactor{Name: "#Name of your compactor"}
+	compactor := compactor{}
+	compactor.Name = "compactor"
+	compactor.Deduplication = true
+	compactor.Deduplication = true
+	compactor.RetentionResolution1h = "10y"
+	compactor.RetentionResolution5m = "30d"
+	compactor.RetentionResolutionRaw = "30d"
 
 	querier := Querier{
-		Targets:         "",
-		Dedupenbaled:    "",
-		Autoownample:    "",
-		Partialresponse: "",
-		Name:            "",
+		Dedupenbaled:    true,
+		Autoownample:    true,
+		Partialresponse: true,
+		Name:            "querier",
 	}
 
 	querierfe := Querierfe{}
-
-	grafana := Grafana{}
-	grafana.Setup = setup
+	querierfe.Name = "querierfe"
+	querierfe.Cacheoption = "inMemory"
 
 	cluster1 := Cluster{}
-	cluster1.Name = "#Name of your Prometheus Cluster"
+	cluster1.Name = "Prometheus"
 	cluster1.Type = "prometheus"
-	cluster1.Data = map[string]interface{}{"install": false, "name": "#Name Of Prometheus Cluster", "namespace": "#Namespace Name", "objStoreConfig": "bucketcluster", "mode": mode}
+	cluster1.Data = map[string]interface{}{"install": false, "name": "Prometheus", "namespace": "default", "objStoreConfig": "bucketcluster"}
 
 	cluster2 := Cluster{}
-	cluster2.Name = "#Name of your Thanos Cluster"
+	cluster2.Name = "Thanos"
 	cluster2.Type = "thanos"
-	cluster2.Data = map[string]interface{}{"name": "#Name Of Thanos Cluster", "querier": querier, "querierFE": querierfe, "compactor": compactor, "ruler": ruler}
+	cluster2.Data = map[string]interface{}{"name": "Thanos", "querier": querier, "querierFE": querierfe, "compactor": compactor, "ruler": ruler}
 
-	if mode == "reciever" {
-		cluster2.Data["reciever"] = reciver
+	if mode == "receiver" {
+		cluster2.Data["receiver"] = receiver
 	}
-
-	prom := Prometheus{}
-	prom.Name = "cluster1"
-	prom.Install = true
-	prom.Mode = "sidecar"
-	prom.Namespace = "monitoring"
-	prom.ObjStoreConfig = "bucketcluster"
-
-	thanos := Thanos{}
-	thanos.Name = "Thanos"
-	thanos.Compactor = compactor
-	thanos.Querier = querier
-	thanos.Querierfe = querierfe
-	thanos.Reciever = reciver
-	thanos.Ruler = ruler
 
 	buckerconfig := BucketConfig{}
 	buckerconfig.BucketName = "Your s3 bucket name"

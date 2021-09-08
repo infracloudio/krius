@@ -52,8 +52,8 @@ type Thanos struct {
 	Name      string    `yaml:"name"`
 	Querier   Querier   `yaml:"querier"`
 	Querierfe Querierfe `yaml:"querierFE"`
-	Reciever  Reciever  `yaml:"receiver"`
-	Compactor Compactor `yaml:"compactor"`
+	Receiver  Receiver  `yaml:"receiver"`
+	Compactor compactor `yaml:"compactor"`
 	Ruler     Ruler     `yaml:"ruler"`
 }
 
@@ -71,16 +71,21 @@ type Querierfe struct {
 
 // Querier
 type Querier struct {
-	Targets         string `yaml:"targets"`
-	Dedupenbaled    string `yaml:"dedupEnbaled"`
-	Autoownample    string `yaml:"autoDownSample"`
-	Partialresponse string `yaml:"partialResponse"`
+	Targets         string `yaml:"targets,omitempty"`
+	Dedupenbaled    bool   `yaml:"dedupEnbaled"`
+	Autoownample    bool   `yaml:"autoDownSample"`
+	Partialresponse bool   `yaml:"partialResponse"`
 	Name            string `yaml:"name"`
 }
 
 // Compactor
-type Compactor struct {
-	Name string `yaml:"name"`
+type compactor struct {
+	Name                   string `yaml:"name"`
+	Downsampling           bool   `yaml:"downsampling"`
+	Deduplication          bool   `yaml:"deduplication"`
+	RetentionResolutionRaw string `yaml:"retentionResolutionRaw"`
+	RetentionResolution5m  string `yaml:"retentionResolution5m"`
+	RetentionResolution1h  string `yaml:"retentionResolution1h"`
 }
 
 // Ruler
@@ -97,7 +102,7 @@ type Setup struct {
 }
 
 // Reciever
-type Reciever struct {
+type Receiver struct {
 	Name string `yaml:"name"`
 }
 
