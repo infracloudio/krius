@@ -56,14 +56,12 @@ type Prometheus struct {
 
 // Thanos
 type Thanos struct {
-	Name           string    `yaml:"name"`
-	Namespace      string    `yaml:"namespace"`
-	ObjStoreConfig string    `yaml:"objStoreConfig"`
-	Querier        Querier   `yaml:"querier"`
-	Querierfe      Querierfe `yaml:"querierFE"`
-	Receiver       Receiver  `yaml:"receiver"`
-	Compactor      Compactor `yaml:"compactor"`
-	Ruler          Ruler     `yaml:"ruler"`
+	Name      string    `yaml:"name"`
+	Querier   Querier   `yaml:"querier"`
+	Querierfe Querierfe `yaml:"querierFE"`
+	Receiver  Receiver  `yaml:"receiver"`
+	Compactor compactor `yaml:"compactor"`
+	Ruler     Ruler     `yaml:"ruler"`
 }
 
 // Grafana
@@ -80,15 +78,15 @@ type Querierfe struct {
 
 // Querier
 type Querier struct {
-	Targets         []string `yaml:"targets"`
-	DedupEnbaled    bool     `yaml:"dedupEnbaled"`
-	AutoDownsample  bool     `yaml:"autoDownSample"`
-	PartialResponse bool     `yaml:"partialResponse"`
-	Name            string   `yaml:"name"`
+	Targets         string `yaml:"targets,omitempty"`
+	Dedupenbaled    bool   `yaml:"dedupEnbaled"`
+	Autoownample    bool   `yaml:"autoDownSample"`
+	Partialresponse bool   `yaml:"partialResponse"`
+	Name            string `yaml:"name"`
 }
 
 // Compactor
-type Compactor struct {
+type compactor struct {
 	Name                   string `yaml:"name"`
 	Downsampling           bool   `yaml:"downsampling"`
 	Deduplication          bool   `yaml:"deduplication"`
@@ -110,7 +108,7 @@ type Setup struct {
 	Namespace string `yaml:"namespace"`
 }
 
-// Receiver
+// Reciever
 type Receiver struct {
 	Name string `yaml:"name"`
 }
