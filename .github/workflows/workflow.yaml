@@ -2,65 +2,64 @@ name: Go
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.15
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
 
-    - uses: actions/cache@v2
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
-    - name: Verify dependencies
-      run: |
-        go mod verify
-        go mod download
-        LINT_VERSION=1.41.1
-        curl -fsSL https://github.com/golangci/golangci-lint/releases/download/v${LINT_VERSION}/golangci-lint-${LINT_VERSION}-linux-amd64.tar.gz | \
-          tar xz --strip-components 1 --wildcards \*/golangci-lint
-        mkdir -p bin && mv golangci-lint bin/
+      - name: Verify dependencies
+        run: |
+          go mod verify
+          go mod download
+          LINT_VERSION=1.41.1
+          curl -fsSL https://github.com/golangci/golangci-lint/releases/download/v${LINT_VERSION}/golangci-lint-${LINT_VERSION}-linux-amd64.tar.gz | \
+            tar xz --strip-components 1 --wildcards \*/golangci-lint
+          mkdir -p bin && mv golangci-lint bin/
 
-    - name: Run checks
-      run: |
-        STATUS=0
-        assert-nothing-changed() {
-          local diff
-          "$@" >/dev/null || return 1
-          if ! diff="$(git diff -U1 --color --exit-code)"; then
-            printf '\e[31mError: running `\e[1m%s\e[22m` results in modifications that you must check into version control:\e[0m\n%s\n\n' "$*" "$diff" >&2
-            git checkout -- .
-            STATUS=1
-          fi
-        }
-        assert-nothing-changed go fmt ./...
-        assert-nothing-changed go mod tidy
-        bin/golangci-lint run --out-format=github-actions --timeout=5m || STATUS=$?
-        exit $STATUS
+      - name: Run checks
+        run: |
+          STATUS=0
+          assert-nothing-changed() {
+            local diff
+            "$@" >/dev/null || return 1
+            if ! diff="$(git diff -U1 --color --exit-code)"; then
+              printf '\e[31mError: running `\e[1m%s\e[22m` results in modifications that you must check into version control:\e[0m\n%s\n\n' "$*" "$diff" >&2
+              git checkout -- .
+              STATUS=1
+            fi
+          }
+          assert-nothing-changed go fmt ./...
+          assert-nothing-changed go mod tidy
+          bin/golangci-lint run --out-format=github-actions --timeout=5m || STATUS=$?
+          exit $STATUS
 
-    - name: Build
-      run: go build -v ./...
+      - name: Build
+        run: go build -v ./...
 
-    - name: Test
-      run: go test -v ./...
+      - name: Test
+        run: go test -v ./...
 
-    # - name: Run GoReleaser
-    #   uses: goreleaser/goreleaser-action@v2
-    #   with:
-    #     version: latest
-    #     args: release --rm-dist
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v2
+        with:
+          version: latest
+          args: release --rm-dist --skip-publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
