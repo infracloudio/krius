@@ -176,3 +176,46 @@ func (prom *Prometheus) InstallClient(clusterName string, receiveEndpoint []stri
 	}
 	return "", err
 }
+
+func (prom *Prometheus) UninstallClient(clusterName string) error {
+
+	chartConfiguration := &helm.Config{
+		Repo: "prometheus-community",
+		Name: "kube-prometheus-stack",
+		URL:  "https://prometheus-community.github.io/helm-charts",
+	}
+
+	helmClient, err := createHelmClientObject(clusterName, prom.Namespace, chartConfiguration)
+	if err != nil {
+		return err
+	}
+
+	helmClient.ReleaseName = prom.Name
+	helmClient.Namespace = prom.Namespace
+
+	// prometheus is already installed, check the release exist & mode, then uninstall the chart
+	results, err := helmClient.ListDeployedReleases()
+	if err != nil {
+		return errors.New("helm list error")
+	}
+	exists := false
+	for _, v := range results {
+		if v.Name == helmClient.ReleaseName {
+			exists = true
+		}
+	}
+
+	if exists {
+		_, err = helmClient.UninstallChart()
+		if err != nil {
+			log.Printf("Error uninstalling prometheus: %s", err)
+			return err
+		}
+
+	} else {
+		errMsg := fmt.Sprintf("Release %s doesn't exist", helmClient.ReleaseName)
+		return errors.New(errMsg)
+	}
+
+	return nil
+}

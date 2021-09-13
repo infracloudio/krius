@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"log"
 
@@ -110,4 +111,47 @@ func (t *Thanos) InstallClient(clusterName string, targets []string) (string, er
 		return receiveEndpoint[0], nil
 	}
 	return "", nil
+}
+
+func (t *Thanos) UninstallClient(clusterName string) error {
+	chartConfiguration := &helm.Config{
+		Repo: "bitnami",
+		Name: "thanos",
+		URL:  "https://charts.bitnami.com/bitnami",
+	}
+
+	helmClient, err := createHelmClientObject(clusterName, t.Namespace, chartConfiguration)
+	if err != nil {
+		return err
+	}
+
+	helmClient.ChartName = "thanos"
+	helmClient.ReleaseName = t.Name
+	helmClient.Namespace = t.Namespace
+
+	// thanos is already installed, check the release exist & mode, then uninstall the chart
+	results, err := helmClient.ListDeployedReleases()
+	if err != nil {
+		return errors.New("helm list error")
+	}
+	exists := false
+	for _, v := range results {
+		if v.Name == helmClient.ReleaseName {
+			exists = true
+		}
+	}
+
+	if exists {
+		_, err = helmClient.UninstallChart()
+		if err != nil {
+			log.Printf("Error uninstalling thanos: %s", err)
+			return err
+		}
+
+	} else {
+		errMsg := fmt.Sprintf("Release %s doesn't exist", helmClient.ReleaseName)
+		return errors.New(errMsg)
+	}
+
+	return nil
 }

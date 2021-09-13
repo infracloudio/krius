@@ -4,6 +4,7 @@ package client
 type Client interface {
 	PreflightChecks(c *Config, clusterName string) ([]string, error)
 	InstallClient(clusterName string, targets []string) (string, error)
+	UninstallClient(clusterName string) error
 }
 
 // KriusConfig
