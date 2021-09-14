@@ -80,7 +80,7 @@ type Querierfe struct {
 
 // Querier
 type Querier struct {
-	Targets         []string `yaml:"targets"`
+	Targets         []string `yaml:"targets,omitempty"`
 	DedupEnbaled    bool     `yaml:"dedupEnbaled"`
 	AutoDownsample  bool     `yaml:"autoDownSample"`
 	PartialResponse bool     `yaml:"partialResponse"`

@@ -20,7 +20,10 @@ func init() {
 	specCmd.AddCommand(generateCmd)
 	generateCmd.Flags().StringP("file", "f", "", "file Path to genrate the config file")
 	generateCmd.Flags().StringP("mode", "m", "", "Mode --> receiver/sidecar")
-	generateCmd.MarkFlagRequired("mode")
+	err := generateCmd.MarkFlagRequired("mode")
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
 }
 
 func createFile(filePath string, content string) {
@@ -51,9 +54,12 @@ func createConfigYAML(cmd *cobra.Command, args []string) {
 
 	ruler := client.Ruler{}
 	ruler.Alertmanagers = []string{"http://kube-prometheus-alertmanager.monitoring.svc.cluster.local:9093"}
-	ruler_str := map[string]interface{}{"group": map[string]interface{}{"name": "metamonitoring", "rules": map[string]interface{}{"alert": "PrometheusDown", "expr": "absent(up{prometheus='monitoring/kube-prometheus'})"}}}
-	ruler_str_yaml, err := yaml.Marshal(&ruler_str)
-	ruler.Config = string(ruler_str_yaml)
+	rulerStr := map[string]interface{}{"group": map[string]interface{}{"name": "metamonitoring", "rules": map[string]interface{}{"alert": "PrometheusDown", "expr": "absent(up{prometheus='monitoring/kube-prometheus'})"}}}
+	rulerStrYaml, err := yaml.Marshal(&rulerStr)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+	ruler.Config = string(rulerStrYaml)
 
 	compactor := client.Compactor{}
 	compactor.Name = "compactor"
@@ -116,6 +122,9 @@ func createConfigYAML(cmd *cobra.Command, args []string) {
 	}
 
 	file, err := cmd.Flags().GetString("file")
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
 	if file == "" {
 		createFile("config.yaml", string(configYAML))
 	} else {
