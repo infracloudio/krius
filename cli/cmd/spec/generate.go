@@ -1,19 +1,133 @@
 package spec
 
 import (
-	"fmt"
+	"log"
+	"os"
+
+	client "github.com/infracloudio/krius/pkg/client"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
 var generateCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Generate a profile based on questions asked to user",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Need to implement generate profile on multicluster")
-	},
+	Run:   createConfigYAML,
 }
 
 func init() {
 	specCmd.AddCommand(generateCmd)
+	generateCmd.Flags().StringP("file", "f", "", "file Path to genrate the config file")
+	generateCmd.Flags().StringP("mode", "m", "", "Mode --> receiver/sidecar")
+	err := generateCmd.MarkFlagRequired("mode")
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+}
+
+func createFile(filePath string, content string) {
+	file, err := os.Create(filePath)
+	if err != nil {
+		log.Fatalf("failed creating file: %s", err)
+	}
+	_, err = file.WriteString("---\n" + content)
+	if err != nil {
+		log.Fatalf("Failed to write yaml file %s", err)
+	}
+	defer file.Close()
+}
+
+func createConfigYAML(cmd *cobra.Command, args []string) {
+	mode, err := cmd.Flags().GetString("mode")
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	} else if mode != "receiver" && mode != "sidecar" {
+		log.Fatalf("error: invalid mode: %s", mode)
+	}
+
+	bucketweb := client.Bucketweb{Enabled: true}
+
+	receiver := client.Receiver{
+		Name: "receiver",
+	}
+
+	ruler := client.Ruler{}
+	ruler.Alertmanagers = []string{"http://kube-prometheus-alertmanager.monitoring.svc.cluster.local:9093"}
+	rulerStr := map[string]interface{}{"group": map[string]interface{}{"name": "metamonitoring", "rules": map[string]interface{}{"alert": "PrometheusDown", "expr": "absent(up{prometheus='monitoring/kube-prometheus'})"}}}
+	rulerStrYaml, err := yaml.Marshal(&rulerStr)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+	ruler.Config = string(rulerStrYaml)
+
+	compactor := client.Compactor{}
+	compactor.Name = "compactor"
+	compactor.Deduplication = true
+	compactor.Deduplication = true
+	compactor.RetentionResolution1h = "10y"
+	compactor.RetentionResolution5m = "30d"
+	compactor.RetentionResolutionRaw = "30d"
+
+	querier := client.Querier{
+		DedupEnbaled:    true,
+		AutoDownsample:  true,
+		PartialResponse: true,
+		Name:            "querier",
+	}
+
+	querierfe := client.Querierfe{}
+	querierfe.Name = "querierfe"
+	querierfe.Cacheoption = "inMemory"
+
+	cluster1 := client.Cluster{}
+	cluster1.Name = "Prometheus"
+	cluster1.Type = "prometheus"
+	cluster1.Data = map[string]interface{}{"install": false, "name": "Prometheus", "namespace": "default", "objStoreConfig": "bucketcluster"}
+
+	cluster2 := client.Cluster{}
+	cluster2.Name = "Thanos"
+	cluster2.Type = "thanos"
+	cluster2.Data = map[string]interface{}{"name": "Thanos", "querier": querier, "querierFE": querierfe, "compactor": compactor, "ruler": ruler}
+
+	if mode == "receiver" {
+		cluster2.Data["receiver"] = receiver
+	}
+
+	buckerconfig := client.BucketConfig{}
+	buckerconfig.BucketName = "Your s3 bucket name"
+	buckerconfig.AccessKey = "Your AWS access key"
+	buckerconfig.SecretKey = "Your AWS secret key"
+	buckerconfig.Endpoint = "Your S3 bucket endpoint"
+	buckerconfig.Insecure = false
+	buckerconfig.Trace.Enable = true
+
+	objstore := client.ObjStoreConfig{}
+	objstore.Name = "bucketcluster"
+	objstore.Type = "s3"
+	objstore.Bucketweb = bucketweb
+	objstore.Config = buckerconfig
+
+	config := client.Config{}
+	if mode == "sidecar" {
+		config.Order = 1
+	}
+	config.Clusters = append(config.Clusters, cluster1)
+	config.Clusters = append(config.Clusters, cluster2)
+	config.ObjStoreConfigslist = append(config.ObjStoreConfigslist, objstore)
+
+	configYAML, err := yaml.Marshal(&config)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+
+	file, err := cmd.Flags().GetString("file")
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+	if file == "" {
+		createFile("config.yaml", string(configYAML))
+	} else {
+		createFile(file, string(configYAML))
+	}
 }
