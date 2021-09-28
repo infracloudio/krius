@@ -204,6 +204,20 @@ func (client *Client) InstallChart(valueOpts *values.Options) (*string, error) {
 	return &release.Manifest, nil
 }
 
+func (client *Client) UninstallChart() (*string, error) {
+
+	uninstallClient := action.NewUninstall(client.ActionConfig)
+
+	res, err := uninstallClient.Run(client.ReleaseName)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Printf("Successfully uninstalled release: %s!", client.ReleaseName)
+
+	return &res.Info, nil
+}
+
 func (client *Client) UpgradeChart(valueOpts *values.Options) (*string, error) {
 	upgradeClient := action.NewUpgrade(client.ActionConfig)
 
@@ -269,6 +283,7 @@ func InitializeHelmAction(settings *cli.EnvSettings) (*action.Configuration, err
 	}
 	return actionConfig, nil
 }
+
 func NewClientFromKubeConf(options *KubeConfClientOptions, settings *cli.EnvSettings) (*action.Configuration, error) {
 	if options.KubeContext != "" {
 		settings.KubeContext = options.KubeContext
