@@ -7,13 +7,17 @@ import (
 	"log"
 
 	client "github.com/infracloudio/krius/pkg/client"
+	kube "github.com/infracloudio/krius/pkg/kubeClient"
 	spec "github.com/infracloudio/krius/pkg/specvalidate"
 	"github.com/spf13/cobra"
+	"helm.sh/helm/v3/pkg/action"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/client-go/kubernetes"
 )
 
 var (
 	describeConfig client.Config
+	clientset      *kubernetes.Clientset
 )
 
 const (
@@ -60,8 +64,35 @@ func DescribeClusterKrius(cmd *cobra.Command, args []string) (err error) {
 		fmt.Print("\n - Namespace: ", each.Data["namespace"])
 		fmt.Print("\n - Type: ", each.Type)
 		fmt.Print("\n - ObjectConfiguration Name: ", each.Data["objStoreConfig"])
+		chartDeployStatus, err := StatusHelmChart(each.Name, fmt.Sprintf("%v", each.Data["name"]), fmt.Sprintf("%v", each.Data["namespace"]))
+		if err != nil {
+			return err
+		}
+		fmt.Print("\n - Status: ", chartDeployStatus)
 		fmt.Print("\n---------------------------------------------------------------------------")
 
 	}
 	return err
+}
+
+func StatusHelmChart(clusterName string, chartName string, namespace string) (status string, err error) {
+
+	kubeClient, err := kube.GetKubeClient(namespace, clusterName)
+	if err != nil {
+		return "", err
+	}
+	clientConfiguration := &action.Configuration{
+		KubeClient: kubeClient
+	}
+
+	statusClient := action.NewStatus(clientConfiguration)
+
+	deployStatus, err := statusClient.Run("checkStatus")
+	if err != nil {
+		return "", err
+	}
+
+	status = string(deployStatus.Info.Status)
+	return status, err
+
 }
