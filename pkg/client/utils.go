@@ -1,8 +1,10 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/infracloudio/krius/pkg/helm"
@@ -83,7 +85,7 @@ func (p Prometheus) createPrometheusReceiverValues(receiveReference []string) *v
 	}
 	return &valueOpts
 }
-func (thanos Thanos) createThanosValuesMap() *values.Options {
+func (thanos Thanos) createThanosValuesMap() (*values.Options, error) {
 	var valueOpts values.Options
 	targets := "{" + strings.Join(thanos.Querier.Targets, ",") + "}"
 	extraFlags := []string{}
@@ -136,8 +138,59 @@ func (thanos Thanos) createThanosValuesMap() *values.Options {
 	}
 	if thanos.Querierfe.Name != "" {
 		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("queryFrontend.enabled=%s", "true"))
+		if thanos.Querierfe.Cacheoption == "in-memory" {
+			maxSizeMap := thanos.Querierfe.Config["maxSize"]
+			maxItemSizeMap := thanos.Querierfe.Config["maxItemSize"]
+			var maxSize, maxItemSize string
+			// maxSize
+			switch maxSizeMap.(type) {
+			case int:
+				maxSize = strconv.Itoa(maxSizeMap.(int))
+			case string:
+				maxSize = maxSizeMap.(string)
+			}
+			// maxItemSize
+			switch maxItemSizeMap.(type) {
+			case int:
+				maxItemSize = strconv.Itoa(maxItemSizeMap.(int))
+			default:
+				return nil, errors.New("invalid maxItemSize type")
+			}
+			inMemConf := "--query-range.response-cache-config=" + `"config"` + ":\n  " +
+				`"max_size": ` + maxSize + "\n  " +
+				`"max_item_size": ` + maxItemSize + "\n" +
+				`"type": "in-memory"`
+			inMemConfResult := "{" + inMemConf + "}"
+			valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("queryFrontend.extraFlags=%s", inMemConfResult))
+		} else if thanos.Querierfe.Cacheoption == "memcached" {
+			var ok bool
+			var addressMap interface{}
+			var address string
+			if addressMap, ok = thanos.Querierfe.Config["address"]; !ok {
+				return nil, errors.New("memcached address doesn't exist")
+			}
+			switch addressMap.(type) {
+			case string:
+				address = addressMap.(string)
+			default:
+				return nil, errors.New("invalid memcached address type")
+			}
+			memCacheConf := "--query-range.response-cache-config=" + `"config"` + ":\n  " +
+				`"addresses":` + "\n  " +
+				`  - ` + `"` + "dnssrv+_grpc._tcp." + address + `"` + "\n  " +
+				`"` + "dns_provider_update_interval" + `": ` + `"` + "10s" + `"` + "\n  " +
+				`"` + "max_async_buffer_size" + `": ` + "10000" + "\n  " +
+				`"` + "max_async_concurrency" + `": ` + "20" + "\n  " +
+				`"` + "max_get_multi_batch_size" + `": ` + "0" + "\n  " +
+				`"` + "max_get_multi_concurrency" + `": ` + "100" + "\n  " +
+				`"` + "max_idle_connections" + `": ` + "100" + "\n  " +
+				`"` + "timeout" + `": ` + `"` + "500ms" + `"` + "\n" +
+				`"` + "type" + `": ` + `"` + "memcached" + `"`
+			memCachedConfResult := "{" + memCacheConf + "}"
+			valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("queryFrontend.extraFlags=%s", memCachedConfResult))
+		}
 	}
-	return &valueOpts
+	return &valueOpts, nil
 }
 
 func createSecretforObjStore(configType string, bucConfig BucketConfig) (map[string][]byte, error) {

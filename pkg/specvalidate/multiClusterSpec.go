@@ -69,33 +69,14 @@ var RuleSchema = `
 							"type": "string"
 						  },
 						  "cacheOption": {
-							"mode": { "enum": ["inMemory", "memcached"] }
+							"enum": ["inMemory", "memcached"],
+							"type": "string"
 						  },
-						  "memcachedOptions": {
-							"type": "object",
-							"properties": {
-							  "enabled": {
-								"type": "boolean"
-							  },
-							  "key": {
-								"type": "string"
-							  }
-							}
+						  "config": {
+							"type": "object"
 						  }
 						},
-						"if": {
-						  "properties": {
-							"cacheOption": { "const": "memcached" }
-						  },
-						  "required": ["cacheOption"]
-						},
-						"then": {
-						  "required": ["memcachedOptions"]
-						},
-						"else": {
-						  "not": { "required": ["memcachedOptions"] }
-						},
-						"required": ["name", "cacheOption"]
+						"required": ["name", "cacheOption", "config"]
 					  },
 					  "receiver": {
 						"type": "object",
@@ -256,5 +237,5 @@ var RuleSchema = `
 	},
 	"required": ["clusters", "objStoreConfigslist"],
 	"additionalProperties": false
-  }
+  }  
 `

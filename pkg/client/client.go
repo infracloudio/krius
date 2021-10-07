@@ -75,8 +75,9 @@ type Grafana struct {
 
 // Querierfe
 type Querierfe struct {
-	Name        string `yaml:"name"`
-	Cacheoption string `yaml:"cacheOption"`
+	Name        string                 `yaml:"name"`
+	Cacheoption string                 `yaml:"cacheOption"`
+	Config      map[string]interface{} `yaml:"config"`
 }
 
 // Querier
