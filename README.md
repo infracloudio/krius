@@ -1,6 +1,6 @@
 # krius
 
-![krius-logo](./images/krius-logo.png)
+![krius-logo](./images/krius-logo.jpg)
 
 Krius is a cli tool to setup Prometheus, Thanos &amp; friends across multiple clusters easily for scale
 
