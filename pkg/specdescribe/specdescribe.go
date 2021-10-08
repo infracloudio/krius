@@ -10,12 +10,10 @@ import (
 	spec "github.com/infracloudio/krius/pkg/specvalidate"
 	"github.com/spf13/cobra"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/client-go/kubernetes"
 )
 
 var (
 	describeConfig client.Config
-	clientset      *kubernetes.Clientset
 )
 
 const (
