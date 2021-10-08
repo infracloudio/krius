@@ -290,3 +290,16 @@ func NewClientFromKubeConf(options *KubeConfClientOptions, settings *cli.EnvSett
 	}
 	return InitializeHelmAction(settings)
 }
+
+func (client *Client) StatusHelmChart(releaseName string) (status string, err error) {
+
+	statusClient := action.NewStatus(client.ActionConfig)
+
+	deployStatus, err := statusClient.Run(releaseName)
+	if err != nil {
+		return "", err
+	}
+
+	status = string(deployStatus.Info.Status)
+	return status, err
+}

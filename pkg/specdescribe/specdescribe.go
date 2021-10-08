@@ -7,10 +7,8 @@ import (
 	"log"
 
 	client "github.com/infracloudio/krius/pkg/client"
-	kube "github.com/infracloudio/krius/pkg/kubeClient"
 	spec "github.com/infracloudio/krius/pkg/specvalidate"
 	"github.com/spf13/cobra"
-	"helm.sh/helm/v3/pkg/action"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
 )
@@ -57,42 +55,21 @@ func DescribeClusterKrius(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	for _, each := range describeConfig.Clusters {
-		fmt.Print("\n---------------------------------------------------------------------------")
+		fmt.Print("\n---------------------------------------------------------------------------\n")
 		fmt.Print("\n Kubernetes Cluster Context: ", each.Name)
 		fmt.Print("\n Krius Cluster")
 		fmt.Print("\n - Name: ", each.Data["name"])
 		fmt.Print("\n - Namespace: ", each.Data["namespace"])
 		fmt.Print("\n - Type: ", each.Type)
 		fmt.Print("\n - ObjectConfiguration Name: ", each.Data["objStoreConfig"])
-		chartDeployStatus, err := StatusHelmChart(each.Name, fmt.Sprintf("%v", each.Data["name"]), fmt.Sprintf("%v", each.Data["namespace"]))
+		chartStatusCheck, err := client.ChartStatusCheck(each.Name, fmt.Sprintf("%v", each.Data["namespace"]), fmt.Sprintf("%v", each.Data["name"]))
 		if err != nil {
-			return err
+			fmt.Print("\n Unable to get the deployed chart status: ", err)
+		} else {
+			fmt.Print("\n - Status: ", chartStatusCheck)
 		}
-		fmt.Print("\n - Status: ", chartDeployStatus)
-		fmt.Print("\n---------------------------------------------------------------------------")
+		fmt.Print("\n---------------------------------------------------------------------------\n")
 
 	}
 	return err
-}
-
-func StatusHelmChart(clusterName string, chartName string, namespace string) (status string, err error) {
-
-	kubeClient, err := kube.GetKubeClient(namespace, clusterName)
-	if err != nil {
-		return "", err
-	}
-	clientConfiguration := &action.Configuration{
-		KubeClient: kubeClient
-	}
-
-	statusClient := action.NewStatus(clientConfiguration)
-
-	deployStatus, err := statusClient.Run("checkStatus")
-	if err != nil {
-		return "", err
-	}
-
-	status = string(deployStatus.Info.Status)
-	return status, err
-
 }
