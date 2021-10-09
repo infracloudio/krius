@@ -143,16 +143,16 @@ func (thanos Thanos) createThanosValuesMap() (*values.Options, error) {
 			maxItemSizeMap := thanos.Querierfe.Config["maxItemSize"]
 			var maxSize, maxItemSize string
 			// maxSize
-			switch maxSizeMap.(type) {
+			switch maxSizeMap := maxSizeMap.(type) {
 			case int:
-				maxSize = strconv.Itoa(maxSizeMap.(int))
+				maxSize = strconv.Itoa(maxSizeMap)
 			case string:
-				maxSize = maxSizeMap.(string)
+				maxSize = maxSizeMap
 			}
 			// maxItemSize
-			switch maxItemSizeMap.(type) {
+			switch maxItemSizeMap := maxItemSizeMap.(type) {
 			case int:
-				maxItemSize = strconv.Itoa(maxItemSizeMap.(int))
+				maxItemSize = strconv.Itoa(maxItemSizeMap)
 			default:
 				return nil, errors.New("invalid maxItemSize type")
 			}
@@ -169,9 +169,9 @@ func (thanos Thanos) createThanosValuesMap() (*values.Options, error) {
 			if addressMap, ok = thanos.Querierfe.Config["address"]; !ok {
 				return nil, errors.New("memcached address doesn't exist")
 			}
-			switch addressMap.(type) {
+			switch addressMap := addressMap.(type) {
 			case string:
-				address = addressMap.(string)
+				address = addressMap
 			default:
 				return nil, errors.New("invalid memcached address type")
 			}
