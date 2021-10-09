@@ -96,8 +96,11 @@ func (t *Thanos) InstallClient(clusterName string, targets []string) (string, er
 		return "", err
 	}
 	t.Querier.Targets = targets
-	values := t.createThanosValuesMap()
+	values, err := t.createThanosValuesMap()
 
+	if err != nil {
+		return "", err
+	}
 	_, err = helmClient.InstallChart(values)
 	if err != nil {
 		log.Printf("Error installing thanos: %s", err)
