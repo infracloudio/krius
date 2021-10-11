@@ -190,6 +190,13 @@ func (thanos Thanos) createThanosValuesMap() (*values.Options, error) {
 			valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("queryFrontend.extraFlags=%s", memCachedConfResult))
 		}
 	}
+	if thanos.Ruler.Name != "" {
+		alertmanagers := "{" + strings.Join(thanos.Ruler.Alertmanagers, ",") + "}"
+		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("ruler.enabled=%s", "true"))
+		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("ruler.alertmanagers=%s", alertmanagers))
+		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("ruler.config=%s", thanos.Ruler.Config))
+
+	}
 	return &valueOpts, nil
 }
 

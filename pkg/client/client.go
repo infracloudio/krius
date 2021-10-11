@@ -101,6 +101,7 @@ type Compactor struct {
 
 // Ruler
 type Ruler struct {
+	Name          string   `yaml:"name"`
 	Alertmanagers []string `yaml:"alertManagers"`
 	Config        string   `yaml:"config"`
 }

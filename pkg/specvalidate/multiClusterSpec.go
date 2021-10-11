@@ -107,11 +107,14 @@ var RuleSchema = `
 							  }
 							]
 						  },
+						  "name": {
+							"type": "string"
+						  },
 						  "config": {
 							"type": "string"
 						  }
 						},
-						"required": ["alertManagers", "config"]
+						"required": ["alertManagers", "config", "name"]
 					  }
 					},
 					"additionalProperties": false,
@@ -237,5 +240,5 @@ var RuleSchema = `
 	},
 	"required": ["clusters", "objStoreConfigslist"],
 	"additionalProperties": false
-  }  
+  }   
 `
