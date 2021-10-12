@@ -2,14 +2,15 @@ package kubeClient
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
-	random "github.com/infracloudio/krius/pkg/utils"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/manifoldco/promptui"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -61,9 +62,28 @@ func (k KubeConfig) InitClient() error {
 func (k KubeConfig) CreateSecret(secretSpec map[string][]byte, secretName string) error {
 	secretsClient := clientset.CoreV1().Secrets(k.Namespace)
 	if k.HasSecret(secretName) {
-		secretName = secretName + random.RandStringRunes(4)
+
+		prompt := promptui.Select{
+			Label: "Bucket secret already exists. Select true for creating a new and false for using the old one",
+			Items: []bool{true, false},
+		}
+
+		_, result, err := prompt.Run()
+		if err != nil {
+			fmt.Printf("Prompt failed %v\n", err)
+			return nil // rare case use old secret
+		}
+		if result == "false" {
+			return nil // use old secret
+		}
 	}
 	// Create secret
+	err := secretsClient.Delete(context.Background(), secretName, metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("creating a secret...\n")
+
 	secret := &apiv1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
@@ -71,7 +91,7 @@ func (k KubeConfig) CreateSecret(secretSpec map[string][]byte, secretName string
 		},
 		Data: secretSpec,
 	}
-	_, err := secretsClient.Create(context.Background(), secret, metav1.CreateOptions{
+	_, err = secretsClient.Create(context.Background(), secret, metav1.CreateOptions{
 		FieldManager: "objStore",
 	})
 	if err != nil {
