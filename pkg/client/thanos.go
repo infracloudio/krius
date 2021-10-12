@@ -101,19 +101,48 @@ func (t *Thanos) InstallClient(clusterName string, targets []string) (string, er
 	if err != nil {
 		return "", err
 	}
-	_, err = helmClient.InstallChart(values)
-	if err != nil {
-		log.Printf("Error installing thanos: %s", err)
-		return "", err
-	}
-	if t.Receiver.Name == "" { // sidecar mode
+	if t.Install {
+		_, err = helmClient.InstallChart(values)
+		if err != nil {
+			log.Printf("Error installing thanos: %s", err)
+			return "", err
+		}
+		if t.Receiver.Name == "" { // sidecar mode
+			return "", nil
+		}
+		receiveEndpoint := getReceiveEndpoint(clusterName, t.Namespace, t.Name)
+		if len(receiveEndpoint) > 0 {
+			return receiveEndpoint[0], nil
+		}
 		return "", nil
 	}
-	receiveEndpoint := getReceiveEndpoint(clusterName, t.Namespace, t.Name)
-	if len(receiveEndpoint) > 0 {
-		return receiveEndpoint[0], nil
+	results, err := helmClient.ListDeployedReleases()
+	if err != nil {
+		return "", errors.New("helm list error")
 	}
-	return "", nil
+	exists := false
+	for _, v := range results {
+		if v.Name == helmClient.ReleaseName {
+			exists = true
+		}
+	}
+	if exists {
+		_, err = helmClient.UpgradeChart(values)
+		if err != nil {
+			log.Printf("Error installing thanos: %s", err)
+			return "", err
+		}
+		if t.Receiver.Name == "" { // sidecar mode
+			return "", nil
+		}
+		receiveEndpoint := getReceiveEndpoint(clusterName, t.Namespace, t.Name)
+		if len(receiveEndpoint) > 0 {
+			return receiveEndpoint[0], nil
+		}
+		return "", nil
+	}
+	errMsg := fmt.Sprintf("Release %s doesn't exist", helmClient.ReleaseName)
+	return "", errors.New(errMsg)
 }
 
 func (t *Thanos) UninstallClient(clusterName string) error {

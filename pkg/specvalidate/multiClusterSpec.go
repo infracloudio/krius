@@ -33,6 +33,9 @@ var RuleSchema = `
 					  "namespace": {
 						"type": "string"
 					  },
+					  "install": {
+						"type": "boolean"
+					  },
 					  "objStoreConfig": {
 						"type": "string"
 					  },
@@ -118,7 +121,7 @@ var RuleSchema = `
 					  }
 					},
 					"additionalProperties": false,
-					"required": ["name", "querier"]
+					"required": ["name", "install", "namespace"]
 				  }
 				}
 			  }
