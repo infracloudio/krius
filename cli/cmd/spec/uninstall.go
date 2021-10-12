@@ -46,45 +46,6 @@ func uninstallSpec(cmd *cobra.Command, args []string) (err error) {
 	if err != nil {
 		return err
 	}
-	preFlightErrors := []string{}
-	// check for preflight errors for all the clusters
-	for _, cluster := range config.Clusters {
-		switch cluster.Type {
-		case "prometheus":
-			pc, err := client.NewPromClient(&cluster)
-			if err != nil {
-				return err
-			}
-			clusterErrors, err := pc.PreflightChecks(&config, cluster.Name)
-			if err != nil {
-				return err
-			}
-			if clusterErrors != nil {
-				preFlightErrors = append(preFlightErrors, clusterErrors...)
-			}
-		case "thanos":
-			tc, err := client.NewThanosClient(&cluster)
-			if err != nil {
-				return err
-			}
-			clusterErrors, err := tc.PreflightChecks(&config, cluster.Name)
-			if err != nil {
-				return err
-			}
-			if clusterErrors != nil {
-				preFlightErrors = append(preFlightErrors, clusterErrors...)
-			}
-		case "grafana":
-			log.Println("Grafana uninstall to be implemented")
-		}
-	}
-
-	if len(preFlightErrors) > 0 {
-		log.Printf("Preflight checks failed %s", preFlightErrors)
-		return
-	}
-
-	log.Println("Preflight checks passed")
 
 	for _, cluster := range config.Clusters {
 		switch cluster.Type {
