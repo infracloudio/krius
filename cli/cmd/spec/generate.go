@@ -103,7 +103,7 @@ func createConfigYAML(cmd *cobra.Command, args []string) {
 	buckerconfig.Trace.Enable = true
 
 	objstore := client.ObjStoreConfig{}
-	objstore.Name = "bucketcluster"
+	objstore.Name = "krius-bucketcluster"
 	objstore.Type = "s3"
 	objstore.Bucketweb = bucketweb
 	objstore.Config = buckerconfig
