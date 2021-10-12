@@ -59,6 +59,7 @@ type Prometheus struct {
 type Thanos struct {
 	Name           string    `yaml:"name"`
 	Namespace      string    `yaml:"namespace"`
+	Install        bool      `yaml:"install"`
 	ObjStoreConfig string    `yaml:"objStoreConfig"`
 	Querier        Querier   `yaml:"querier"`
 	Querierfe      Querierfe `yaml:"querierFE"`
