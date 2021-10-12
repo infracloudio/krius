@@ -76,12 +76,13 @@ func (k KubeConfig) CreateSecret(secretSpec map[string][]byte, secretName string
 		if result == "false" {
 			return nil // use old secret
 		}
+		err = secretsClient.Delete(context.Background(), secretName, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
 	}
 	// Create secret
-	err := secretsClient.Delete(context.Background(), secretName, metav1.DeleteOptions{})
-	if err != nil {
-		return err
-	}
+
 	fmt.Printf("creating a secret...\n")
 
 	secret := &apiv1.Secret{
@@ -91,7 +92,7 @@ func (k KubeConfig) CreateSecret(secretSpec map[string][]byte, secretName string
 		},
 		Data: secretSpec,
 	}
-	_, err = secretsClient.Create(context.Background(), secret, metav1.CreateOptions{
+	_, err := secretsClient.Create(context.Background(), secret, metav1.CreateOptions{
 		FieldManager: "objStore",
 	})
 	if err != nil {
