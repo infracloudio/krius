@@ -117,7 +117,7 @@ func applySpec(cmd *cobra.Command, args []string) (err error) {
 			if err != nil {
 				return err
 			}
-			targets = append(targets, target)
+			targets = append(targets, target+":10901")
 		case "thanos":
 			tc, err := client.NewThanosClient(&cluster)
 			if err != nil {
