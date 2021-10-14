@@ -11,8 +11,8 @@ import (
 )
 
 var uninstallSpecCmd = &cobra.Command{
-	Use:   "uninstall",
-	Short: "Deletes the entire stack across clusters",
+	Use:   "destroy",
+	Short: "Destroy Krius Managed stack across clusters defined in the config file",
 	RunE:  uninstallSpec,
 }
 
