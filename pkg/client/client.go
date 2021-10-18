@@ -11,7 +11,7 @@ type Client interface {
 type Config struct {
 	Clusters            []Cluster        `yaml:"clusters"`
 	ObjStoreConfigslist []ObjStoreConfig `yaml:"objStoreConfigslist"`
-	Order               int              //if 1 then mode is sidecar else mode is receiver
+	Order               int              `yaml:",omitempty"` //if 1 then mode is sidecar else mode is receiver
 }
 
 // Cluster
