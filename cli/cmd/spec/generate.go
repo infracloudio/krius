@@ -115,8 +115,6 @@ func createConfigYAML(cmd *cobra.Command, args []string) {
 	config := client.Config{}
 	if mode == "sidecar" {
 		config.Order = 1
-	} else if mode == "receiver" {
-		config.Order = 2
 	}
 	config.Clusters = append(config.Clusters, cluster1)
 	config.Clusters = append(config.Clusters, cluster2)
