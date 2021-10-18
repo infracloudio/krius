@@ -16,6 +16,8 @@ var generateCmd = &cobra.Command{
 	Run:   createConfigYAML,
 }
 
+const defaultObjectStorageConfigName = "krius-bucketcluster"
+
 func init() {
 	specCmd.AddCommand(generateCmd)
 	generateCmd.Flags().StringP("file", "f", "", "file Path to genrate the config file")
@@ -53,6 +55,7 @@ func createConfigYAML(cmd *cobra.Command, args []string) {
 	}
 
 	ruler := client.Ruler{}
+	ruler.Name = "ruler"
 	ruler.Alertmanagers = []string{"http://kube-prometheus-alertmanager.monitoring.svc.cluster.local:9093"}
 	rulerStr := map[string]interface{}{"group": map[string]interface{}{"name": "metamonitoring", "rules": map[string]interface{}{"alert": "PrometheusDown", "expr": "absent(up{prometheus='monitoring/kube-prometheus'})"}}}
 	rulerStrYaml, err := yaml.Marshal(&rulerStr)
@@ -79,16 +82,17 @@ func createConfigYAML(cmd *cobra.Command, args []string) {
 	querierfe := client.Querierfe{}
 	querierfe.Name = "querierfe"
 	querierfe.Cacheoption = "inMemory"
+	querierfe.Config = map[string]interface{}{"maxSixe": 1}
 
 	cluster1 := client.Cluster{}
 	cluster1.Name = "Prometheus"
 	cluster1.Type = "prometheus"
-	cluster1.Data = map[string]interface{}{"install": false, "name": "Prometheus", "namespace": "default", "objStoreConfig": "bucketcluster"}
+	cluster1.Data = map[string]interface{}{"install": false, "name": "Prometheus", "namespace": "default", "mode": mode, "objStoreConfig": defaultObjectStorageConfigName}
 
 	cluster2 := client.Cluster{}
 	cluster2.Name = "Thanos"
 	cluster2.Type = "thanos"
-	cluster2.Data = map[string]interface{}{"name": "Thanos", "querier": querier, "querierFE": querierfe, "compactor": compactor, "ruler": ruler}
+	cluster2.Data = map[string]interface{}{"name": "Thanos", "namespace": "default", "querier": querier, "querierFE": querierfe, "compactor": compactor, "ruler": ruler, "objStoreConfig": defaultObjectStorageConfigName}
 
 	if mode == "receiver" {
 		cluster2.Data["receiver"] = receiver
@@ -103,7 +107,7 @@ func createConfigYAML(cmd *cobra.Command, args []string) {
 	buckerconfig.Trace.Enable = true
 
 	objstore := client.ObjStoreConfig{}
-	objstore.Name = "krius-bucketcluster"
+	objstore.Name = defaultObjectStorageConfigName
 	objstore.Type = "s3"
 	objstore.Bucketweb = bucketweb
 	objstore.Config = buckerconfig

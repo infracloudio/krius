@@ -81,7 +81,7 @@ func (p Prometheus) createPrometheusReceiverValues(receiveReference []string) *v
 	valueOpts.Values = append(valueOpts.Values,
 		fmt.Sprintf("commonLabels.replica=%s", p.Name))
 	if len(receiveReference) > 0 && receiveReference[0] != "" {
-		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("prometheus.prometheusSpec.remoteWrite[0].url=http://%s:10901/api/v1/receive", receiveReference[0]))
+		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("prometheus.prometheusSpec.remoteWrite[0].url=http://%s:19291/api/v1/receive", receiveReference[0]))
 	}
 	return &valueOpts
 }
