@@ -16,11 +16,12 @@ import (
 
 var settings *cli.EnvSettings
 
-func createHelmClientObject(context, namespace string, helmConfig *helm.Config) (*helm.Client, error) {
+func createHelmClientObject(context, namespace string, debug bool, helmConfig *helm.Config) (*helm.Client, error) {
 	opt := &helm.KubeConfClientOptions{
 		KubeContext: context,
 	}
 	os.Setenv("HELM_NAMESPACE", namespace)
+	helm.Settings.Debug = debug
 	settings = cli.New()
 	action, err := helm.NewClientFromKubeConf(opt, settings)
 	if err != nil {
@@ -51,7 +52,11 @@ func getPrometheusTargets(clusterName, namespace, promName string) []string {
 	if err != nil {
 		return nil
 	}
-	return kubeClient.GetServiceInfo(promName + "-kube-prometheus-thanos-external")
+	m := make(map[string]string)
+	m["app"] = "krius"
+	m["prometheus"] = "sidecar"
+	return kubeClient.GetServiceInfoByLabels(m)
+
 }
 
 func getReceiveEndpoint(clusterName, namespace, specName string) []string {
@@ -70,6 +75,8 @@ func (p Prometheus) createPrometheusSidecarValues() *values.Options {
 		fmt.Sprintf("prometheus.prometheusSpec.thanos.sha=%s", "dbf064aadd18cc9e545c678f08800b01a921cf6817f4f02d5e2f14f221bee17c"),
 		fmt.Sprintf("prometheus.thanosService.enabled=%s", "true"),
 		fmt.Sprintf("prometheus.thanosServiceExternal.enabled=%s", "true"),
+		fmt.Sprintf("prometheus.thanosServiceExternal.labels.app=%s", "krius"),
+		fmt.Sprintf("prometheus.thanosServiceExternal.labels.prometheus=%s", "sidecar"),
 		fmt.Sprintf("prometheus.prometheusSpec.thanos.objectStorageConfig.name=%s", p.ObjStoreConfig),
 		fmt.Sprintf("prometheus.prometheusSpec.thanos.objectStorageConfig.key=%s", "objstore.yml")}
 	return &valueOpts

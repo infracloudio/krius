@@ -2,15 +2,15 @@ package kubeClient
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/manifoldco/promptui"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -62,29 +62,12 @@ func (k KubeConfig) InitClient() error {
 func (k KubeConfig) CreateSecret(secretSpec map[string][]byte, secretName string) error {
 	secretsClient := clientset.CoreV1().Secrets(k.Namespace)
 	if k.HasSecret(secretName) {
-
-		prompt := promptui.Select{
-			Label: "Bucket secret already exists. Select true for creating a new and false for using the old one",
-			Items: []bool{true, false},
-		}
-
-		_, result, err := prompt.Run()
-		if err != nil {
-			fmt.Printf("Prompt failed %v\n", err)
-			return nil // rare case use old secret
-		}
-		if result == "false" {
-			return nil // use old secret
-		}
-		err = secretsClient.Delete(context.Background(), secretName, metav1.DeleteOptions{})
+		err := secretsClient.Delete(context.Background(), secretName, metav1.DeleteOptions{})
 		if err != nil {
 			return err
 		}
 	}
 	// Create secret
-
-	fmt.Printf("creating a secret...\n")
-
 	secret := &apiv1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
@@ -142,6 +125,33 @@ func (k KubeConfig) GetServiceInfo(svcName string) []string {
 	}
 	if len(targets) == 0 {
 		targets = append(targets, list.Spec.ClusterIP)
+	}
+	return targets
+
+}
+
+func (k KubeConfig) GetServiceInfoByLabels(labelsMap map[string]string) []string {
+	selector := labels.NewSelector()
+
+	for k, v := range labelsMap {
+		labelSelector, err := labels.NewRequirement(k, selection.Equals, []string{v})
+		if err != nil {
+			return nil
+		}
+		selector = selector.Add(*labelSelector)
+
+	}
+	list, err := clientset.CoreV1().Services(k.Namespace).List(context.Background(), metav1.ListOptions{LabelSelector: selector.String()})
+	if err != nil {
+		return nil
+	}
+	var targets []string
+	l := list.Items
+	for _, v := range l[0].Status.LoadBalancer.Ingress {
+		targets = append(targets, v.Hostname)
+	}
+	if len(targets) == 0 {
+		targets = append(targets, l[0].Spec.ClusterIP)
 	}
 	return targets
 
