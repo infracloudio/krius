@@ -1,9 +1,11 @@
 package spec
 
 import (
+	"fmt"
 	"io/ioutil"
-	"log"
 	"sort"
+	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -16,80 +18,83 @@ const (
 	configFile = "config-file"
 )
 
-var applyCmd = &cobra.Command{
-	Use:   "apply",
-	Short: "Applies/Updates the give profie file",
-	RunE:  applySpec,
-}
-
-func init() {
-	specCmd.AddCommand(applyCmd)
-	err := addSpecApplyFlags(applyCmd)
-	if err != nil {
-		log.Printf("Error adding flags: %v", err)
-	}
-}
-
-func addSpecApplyFlags(cmd *cobra.Command) error {
-	cmd.Flags().StringP("config-file", "c", "", "config file path")
-	err := cmd.MarkFlagRequired("config-file")
-	return err
-}
-
-func applySpec(cmd *cobra.Command, args []string) (err error) {
+func (r *AppRunner) applySpec(cmd *cobra.Command) (err error) {
 	configFileFlag, _ := cmd.Flags().GetString(configFile)
+	yamlFile, err := ioutil.ReadFile(configFileFlag)
+	if err != nil {
+		r.log.Error(err)
+		return
+	}
+	r.status.Start("validating yaml")
+	time.Sleep(1 * time.Second)
 	loader, ruleSchemaLoader, err := spec.GetLoaders(configFileFlag)
 	if err != nil {
 		return err
 	}
 	valid, errors := spec.ValidateYML(loader, ruleSchemaLoader)
 	if !valid {
-		log.Println(errors)
+		errs := []string{}
+		for _, desc := range errors {
+			errs = append(errs, desc.String())
+		}
+		r.status.Error("validating yaml: " + strings.Join(errs, ", "))
 		return
 	}
-	log.Println("valid yaml")
-	yamlFile, err := ioutil.ReadFile(configFileFlag)
-	if err != nil {
-		log.Fatalf("yamlFile.Get err #%v ", err)
-	}
+	r.status.Success()
+
 	var config client.Config
 	err = yaml.Unmarshal(yamlFile, &config)
 	if err != nil {
-		return err
+		r.log.Error(err)
+		return
 	}
 	preFlightErrors := []string{}
+
 	// check for preflight errors for all the clusters
 	for _, cluster := range config.Clusters {
+		r.status.Start(fmt.Sprintf("Preflight error checking in cluster %s", cluster.Name))
+
 		switch cluster.Type {
 		case "prometheus":
 			pc, err := client.NewPromClient(&cluster)
 			if err != nil {
+				r.log.Error(err)
 				return err
 			}
 			clusterErrors, err := pc.PreflightChecks(&config, cluster.Name)
 			if err != nil {
+				r.log.Error(err)
 				return err
 			}
-			if clusterErrors != nil {
+			if len(clusterErrors) > 0 {
 				preFlightErrors = append(preFlightErrors, clusterErrors...)
+			} else {
+				r.status.Success()
+				r.status.Stop()
 			}
 		case "thanos":
 			tc, err := client.NewThanosClient(&cluster)
 			if err != nil {
+				r.log.Error(err)
 				return err
 			}
 			clusterErrors, err := tc.PreflightChecks(&config, cluster.Name)
 			if err != nil {
+				r.log.Error(err)
 				return err
 			}
-			if clusterErrors != nil {
+			if len(clusterErrors) > 0 {
 				preFlightErrors = append(preFlightErrors, clusterErrors...)
+			} else {
+				r.status.Success()
+				r.status.Stop()
+
 			}
 		case "grafana":
 		}
 	}
 	if len(preFlightErrors) > 0 {
-		log.Printf("Preflight checks failed %s", preFlightErrors)
+		r.status.Error(strings.Join(preFlightErrors, ", "))
 		return
 	}
 
@@ -103,32 +108,44 @@ func applySpec(cmd *cobra.Command, args []string) (err error) {
 			return config.Clusters[p].Type > config.Clusters[q].Type
 		})
 	}
-	log.Println("Preflight checks passed")
 	var targets []string
 	var receiveEndpoints []string
 	for _, cluster := range config.Clusters {
+		m := fmt.Sprintf("🚀 Installing %s stack in cluster %s", cluster.Type, cluster.Name)
+		if r.log.DebugLevel {
+			r.log.Infof(m)
+		} else {
+			r.status.Start(m)
+		}
 		switch cluster.Type {
 		case "prometheus":
 			pc, err := client.NewPromClient(&cluster)
 			if err != nil {
+				r.status.Error()
 				return err
 			}
-			target, err := pc.InstallClient(cluster.Name, receiveEndpoints)
+			target, err := pc.InstallClient(cluster.Name, receiveEndpoints, r.status.logger.DebugLevel)
 			if err != nil {
+				r.status.Error()
 				return err
 			}
 			targets = append(targets, target+":10901")
+			r.status.Success()
+			r.status.Stop()
 		case "thanos":
 			tc, err := client.NewThanosClient(&cluster)
 			if err != nil {
+				r.status.Error()
 				return err
 			}
-			endpoint, err := tc.InstallClient(cluster.Name, targets)
+			endpoint, err := tc.InstallClient(cluster.Name, targets, r.status.logger.DebugLevel)
 			if err != nil {
+				r.status.Error()
 				return err
 			}
 			receiveEndpoints = append(receiveEndpoints, endpoint)
-
+			r.status.Success()
+			r.status.Stop()
 		case "grafana":
 		}
 	}

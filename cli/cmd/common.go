@@ -42,10 +42,10 @@ func createHelmClientObject(helmConfig *helm.Config) (*helm.Client, error) {
 		releaseName, _ = helmConfig.Cmd.Flags().GetString("release")
 	}
 	if namespace == "" {
-		return nil, errors.New("Please set Namespace")
+		return nil, errors.New("please set Namespace")
 	}
 	if releaseName == "" {
-		return nil, errors.New("Please set Release name")
+		return nil, errors.New("please set Release name")
 	}
 	os.Setenv("HELM_NAMESPACE", namespace)
 	settings = cli.New()

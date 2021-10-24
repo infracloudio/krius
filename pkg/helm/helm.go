@@ -26,8 +26,12 @@ import (
 	"helm.sh/helm/v3/pkg/strvals"
 )
 
+var (
+	Settings = cli.New()
+)
+
 // AddRepo adds repo with given name and url
-func (client *Client) AddRepo() error {
+func (client *Client) AddRepo() (bool, error) {
 	repoFile := client.Settings.RepositoryConfig
 
 	//Ensure the file directory exists as it is required for file locking
@@ -62,10 +66,8 @@ func (client *Client) AddRepo() error {
 	if err := yaml.Unmarshal(b, &f); err != nil {
 		log.Fatal(err)
 	}
-
 	if f.Has(client.RepoName) {
-		fmt.Printf("repository name (%s) already exists\n", client.RepoName)
-		return nil
+		return true, nil
 	}
 
 	c := repo.Entry{
@@ -75,21 +77,21 @@ func (client *Client) AddRepo() error {
 
 	r, err := repo.NewChartRepository(&c, getter.All(client.Settings))
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if _, err := r.DownloadIndexFile(); err != nil {
 		err := errors.Wrapf(err, "looks like %q is not a valid chart repository or cannot be reached", client.URL)
-		return err
+		return false, err
 	}
 
 	f.Update(&c)
 
 	if err := f.WriteFile(repoFile, 0644); err != nil {
-		return err
+		return false, err
 	}
 	fmt.Printf("%q has been added to your repositories\n", client.RepoName)
-	return nil
+	return false, nil
 }
 
 func (client *Client) UpdateRepo() error {
@@ -213,8 +215,6 @@ func (client *Client) UninstallChart() (*string, error) {
 		return nil, err
 	}
 
-	log.Printf("Successfully uninstalled release: %s!", client.ReleaseName)
-
 	return &res.Info, nil
 }
 
@@ -268,13 +268,15 @@ func isChartInstallable(ch *chart.Chart) (bool, error) {
 }
 
 func debug(format string, v ...interface{}) {
+	if !Settings.Debug {
+		return
+	}
 	format = fmt.Sprintf("[debug] %s\n", format)
 	err := log.Output(2, fmt.Sprintf(format, v...))
 	if err != nil {
 		log.Printf("Error while logging: %v", err)
 	}
 }
-
 func InitializeHelmAction(settings *cli.EnvSettings) (*action.Configuration, error) {
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(),

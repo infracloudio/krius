@@ -10,7 +10,7 @@ func ChartStatusCheck(clusterName string, namespace string, chartName string) (s
 		Name: chartName,
 	}
 
-	helmClient, err := createHelmClientObject(clusterName, namespace, chartConfiguration)
+	helmClient, err := createHelmClientObject(clusterName, namespace, false, chartConfiguration)
 	if err != nil {
 		return "", err
 	}
