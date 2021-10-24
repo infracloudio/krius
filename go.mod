@@ -3,9 +3,8 @@ module github.com/infracloudio/krius
 go 1.16
 
 require (
-	github.com/briandowns/spinner v1.16.0 // indirect
+	github.com/briandowns/spinner v1.16.0
 	github.com/gofrs/flock v0.8.0
-	github.com/manifoldco/promptui v0.8.0
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.1.3
