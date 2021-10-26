@@ -10,17 +10,21 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+var thanosChartConfiguration = &helm.Config{
+	Repo: "bitnami",
+	Name: "thanos",
+	URL:  "https://charts.bitnami.com/bitnami",
+}
+
 func NewThanosClient(thanosCluster *Cluster) (Client, error) {
 	thanosConfig, err := GetConfig(thanosCluster.Data, "thanos")
 	if err != nil {
-		log.Printf("Error getting config %s", err)
 		return nil, err
 	}
 	spec, _ := yaml.Marshal(thanosConfig)
 	var thanos Thanos
 	err = yaml.Unmarshal(spec, &thanos)
 	if err != nil {
-		log.Printf("Error unmarshaling %s", err)
 		return nil, err
 	}
 	return &thanos, nil
@@ -68,32 +72,49 @@ func (t *Thanos) PreflightChecks(clusterConfig *Config, clusterName string) ([]s
 		e := fmt.Sprintf("cluster.%s: Bucket config doesn't exist,", clusterName)
 		thanosErrs = append(thanosErrs, e)
 	}
+	if !t.Install {
+		helmClient, err := createHelmClientObject(clusterName, t.Namespace, false, thanosChartConfiguration)
+		if err != nil {
+			thanosErrs = append(thanosErrs, err.Error())
+
+		}
+		helmClient.ChartName = "thanos"
+		helmClient.ReleaseName = t.Name
+		results, err := helmClient.ListDeployedReleases()
+		if err != nil {
+			thanosErrs = append(thanosErrs, err.Error())
+		}
+		exists := false
+		for _, v := range results {
+			if v.Name == helmClient.ReleaseName {
+				exists = true
+			}
+		}
+		if !exists {
+			e := fmt.Sprintf("cluster.%s: release %s does't exist", clusterName, t.Name)
+			thanosErrs = append(thanosErrs, e)
+		}
+	}
 	return thanosErrs, nil
 }
 
-func (t *Thanos) InstallClient(clusterName string, targets []string) (string, error) {
+func (t *Thanos) InstallClient(clusterName string, targets []string, debug bool) (string, error) {
 
-	chartConfiguration := &helm.Config{
-		Repo: "bitnami",
-		Name: "thanos",
-		URL:  "https://charts.bitnami.com/bitnami",
-	}
-
-	helmClient, err := createHelmClientObject(clusterName, t.Namespace, chartConfiguration)
+	helmClient, err := createHelmClientObject(clusterName, t.Namespace, debug, thanosChartConfiguration)
 	if err != nil {
 		return "", err
 	}
 	helmClient.ChartName = "thanos"
 	helmClient.ReleaseName = t.Name
-	err = helmClient.AddRepo()
+	exist, err := helmClient.AddRepo()
 	if err != nil {
-		log.Fatalf("helm add repo error: %v", err)
 		return "", err
 	}
-	err = helmClient.UpdateRepo()
-	if err != nil {
-		log.Fatalf("helm update repo error: %v", err)
-		return "", err
+	if !exist {
+		err = helmClient.UpdateRepo()
+		if err != nil {
+			return "", err
+		}
 	}
 	t.Querier.Targets = targets
 	values, err := t.createThanosValuesMap()
@@ -104,7 +125,6 @@ func (t *Thanos) InstallClient(clusterName string, targets []string) (string, er
 	if t.Install {
 		_, err = helmClient.InstallChart(values)
 		if err != nil {
-			log.Printf("Error installing thanos: %s", err)
 			return "", err
 		}
 		if t.Receiver.Name == "" { // sidecar mode
@@ -116,43 +136,22 @@ func (t *Thanos) InstallClient(clusterName string, targets []string) (string, er
 		}
 		return "", nil
 	}
-	results, err := helmClient.ListDeployedReleases()
+	_, err = helmClient.UpgradeChart(values)
 	if err != nil {
-		return "", errors.New("helm list error")
+		return "", err
 	}
-	exists := false
-	for _, v := range results {
-		if v.Name == helmClient.ReleaseName {
-			exists = true
-		}
-	}
-	if exists {
-		_, err = helmClient.UpgradeChart(values)
-		if err != nil {
-			log.Printf("Error installing thanos: %s", err)
-			return "", err
-		}
-		if t.Receiver.Name == "" { // sidecar mode
-			return "", nil
-		}
-		receiveEndpoint := getReceiveEndpoint(clusterName, t.Namespace, t.Name)
-		if len(receiveEndpoint) > 0 {
-			return receiveEndpoint[0], nil
-		}
+	if t.Receiver.Name == "" { // sidecar mode
 		return "", nil
 	}
-	errMsg := fmt.Sprintf("Release %s doesn't exist", helmClient.ReleaseName)
-	return "", errors.New(errMsg)
+	receiveEndpoint := getReceiveEndpoint(clusterName, t.Namespace, t.Name)
+	if len(receiveEndpoint) > 0 {
+		return receiveEndpoint[0], nil
+	}
+	return "", nil
 }
 
 func (t *Thanos) UninstallClient(clusterName string) error {
-	chartConfiguration := &helm.Config{
-		Repo: "bitnami",
-		Name: "thanos",
-		URL:  "https://charts.bitnami.com/bitnami",
-	}
-
-	helmClient, err := createHelmClientObject(clusterName, t.Namespace, chartConfiguration)
+	helmClient, err := createHelmClientObject(clusterName, t.Namespace, false, thanosChartConfiguration)
 	if err != nil {
 		return err
 	}
