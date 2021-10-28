@@ -25,8 +25,8 @@ var applyCmd = &cobra.Command{
 }
 
 var uninstallSpecCmd = &cobra.Command{
-	Use:   "uninstall",
-	Short: "Deletes the entire stack across clusters",
+	Use:   "destory",
+	Short: "Destory the entire stack across clusters",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return manageApp(cmd)
 	},
