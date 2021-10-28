@@ -34,7 +34,7 @@ func manageApp(cmd *cobra.Command) error {
 		if err != nil {
 			logger.Error(err.Error())
 		}
-	case "uninstall":
+	case "destroy":
 		err := runner.uninstallSpec(cmd)
 		if err != nil {
 			logger.Error(err.Error())
