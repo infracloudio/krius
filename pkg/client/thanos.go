@@ -17,7 +17,7 @@ var thanosChartConfiguration = &helm.Config{
 }
 
 func NewThanosClient(thanosCluster *Cluster) (Client, error) {
-	thanosConfig, err := GetConfig(thanosCluster.Data, "thanos")
+	thanosConfig, err := getConfig(thanosCluster.Data, "thanos")
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,6 @@ func NewThanosClient(thanosCluster *Cluster) (Client, error) {
 
 func (t *Thanos) PreflightChecks(clusterConfig *Config, clusterName string) ([]string, error) {
 	thanosErrs := []string{}
-
 	if clusterConfig.Order == 2 {
 		receiver := Receiver{}
 		if (t.Receiver) == receiver {
@@ -44,35 +43,22 @@ func (t *Thanos) PreflightChecks(clusterConfig *Config, clusterName string) ([]s
 	if err != nil {
 		return nil, err
 	}
-	err = kubeClient.CreateNSIfNotExist()
-	if err != nil {
-		e := fmt.Sprintf("cluster.%s: %s,", clusterName, err)
-		thanosErrs = append(thanosErrs, e)
-		return thanosErrs, nil // don't create secret, if error in creating namespace
-	}
-
-	found := false
-	for _, v := range clusterConfig.ObjStoreConfigslist {
-		if v.Name == t.ObjStoreConfig {
-			found = true
-			secretSpec, err := createSecretforObjStore(v.Type, v.Config)
-			if err != nil {
-				return nil, err
-			}
-			err = kubeClient.CreateSecret(secretSpec, t.ObjStoreConfig)
-
-			if err != nil {
-				e := fmt.Sprintf("cluster.%s: %s,", t.Name, err)
-				thanosErrs = append(thanosErrs, e)
-			}
-			break
+	if t.Install {
+		err = kubeClient.CreateNSIfNotExist()
+		if err != nil {
+			e := fmt.Sprintf("cluster.%s: %s,", clusterName, err)
+			thanosErrs = append(thanosErrs, e)
+			return thanosErrs, nil // don't try to create secret, if error in creating namespace
 		}
-	}
-	if !found {
-		e := fmt.Sprintf("cluster.%s: Bucket config doesn't exist,", clusterName)
-		thanosErrs = append(thanosErrs, e)
-	}
-	if !t.Install {
+	} else {
+		// check namepsace exist
+		err := kubeClient.CheckNamespaceExist()
+		if err != nil {
+			e := fmt.Sprintf("cluster.%s: %s,", clusterName, err)
+			thanosErrs = append(thanosErrs, e)
+			return thanosErrs, nil
+		}
+		// check release exist
 		helmClient, err := createHelmClientObject(clusterName, t.Namespace, false, thanosChartConfiguration)
 		if err != nil {
 			thanosErrs = append(thanosErrs, err.Error())
@@ -95,11 +81,31 @@ func (t *Thanos) PreflightChecks(clusterConfig *Config, clusterName string) ([]s
 			thanosErrs = append(thanosErrs, e)
 		}
 	}
+
+	found := false
+	for _, v := range clusterConfig.ObjStoreConfigslist {
+		if v.Name == t.ObjStoreConfig {
+			found = true
+			secretSpec, err := createSecretforObjStore(v.Type, v.Config)
+			if err != nil {
+				return nil, err
+			}
+			err = kubeClient.CreateSecret(secretSpec, t.ObjStoreConfig)
+			if err != nil {
+				e := fmt.Sprintf("cluster.%s: %s,", t.Name, err)
+				thanosErrs = append(thanosErrs, e)
+			}
+			break
+		}
+	}
+	if !found {
+		e := fmt.Sprintf("cluster.%s: Bucket config doesn't exist,", clusterName)
+		thanosErrs = append(thanosErrs, e)
+	}
 	return thanosErrs, nil
 }
 
 func (t *Thanos) InstallClient(clusterName string, targets []string, debug bool) (string, error) {
-
 	helmClient, err := createHelmClientObject(clusterName, t.Namespace, debug, thanosChartConfiguration)
 	if err != nil {
 		return "", err

@@ -206,9 +206,7 @@ var RuleSchema = `
 			  "name": {
 				"type": "string"
 			  },
-			  "type": {
-				"type": "string"
-			  },
+			  "type": { "enum": ["S3", "GCS", "AZURE"] },
 			  "config": {
 				"type": "object",
 				"properties": {
@@ -225,7 +223,7 @@ var RuleSchema = `
 					"type": "string"
 				  }
 				},
-				"required": ["bucket", "endpoint", "accessKey", "secretKey"]
+				"required": ["bucket"]
 			  },
 			  "bucketweb": {
 				"type": "object",

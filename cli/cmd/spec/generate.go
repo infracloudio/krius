@@ -98,13 +98,13 @@ func createConfigYAML(cmd *cobra.Command, args []string) {
 		cluster2.Data["receiver"] = receiver
 	}
 
-	buckerconfig := client.BucketConfig{}
-	buckerconfig.BucketName = "Your s3 bucket name"
-	buckerconfig.AccessKey = "Your AWS access key"
-	buckerconfig.SecretKey = "Your AWS secret key"
-	buckerconfig.Endpoint = "Your S3 bucket endpoint"
-	buckerconfig.Insecure = false
-	buckerconfig.Trace.Enable = true
+	buckerconfig := make(map[string]interface{})
+	buckerconfig["bucket"] = "Your s3 bucket name"
+	buckerconfig["access_key"] = "Your AWS access key"
+	buckerconfig["secret_key"] = "Your AWS secret key"
+	buckerconfig["endpoint"] = "Your S3 bucket endpoint"
+	buckerconfig["insecure"] = false
+	buckerconfig["trace"] = true
 
 	objstore := client.ObjStoreConfig{}
 	objstore.Name = defaultObjectStorageConfigName
