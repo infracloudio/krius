@@ -10,8 +10,8 @@ import (
 )
 
 type Objspec struct {
-	ConfigType string          `yaml:"type"`
-	Config     ObjBucketConfig `yaml:"config"`
+	ConfigType string                 `yaml:"type"`
+	Config     map[string]interface{} `yaml:"config"`
 }
 
 var chartConfiguration = &helm.Config{
@@ -20,17 +20,8 @@ var chartConfiguration = &helm.Config{
 	URL:  "https://prometheus-community.github.io/helm-charts",
 }
 
-type ObjBucketConfig struct {
-	BucketName string `yaml:"bucket"`
-	Endpoint   string `yaml:"endpoint"`
-	AccessKey  string `yaml:"access_key"`
-	SecretKey  string `yaml:"secret_key"`
-	Insecure   bool   `yaml:"insecure"`
-	Trace      Trace  `yaml:"trace"`
-}
-
 func NewPromClient(promCluster *Cluster) (Client, error) {
-	promConfig, err := GetConfig(promCluster.Data, "prometheus")
+	promConfig, err := getConfig(promCluster.Data, "prometheus")
 	if err != nil {
 		return nil, err
 	}
@@ -44,6 +35,7 @@ func NewPromClient(promCluster *Cluster) (Client, error) {
 }
 
 func (prom *Prometheus) PreflightChecks(clusterConfig *Config, clusterName string) ([]string, error) {
+	promErrs := []string{}
 	if prom.Mode == "sidecar" && clusterConfig.Order == 0 {
 		clusterConfig.Order = 1
 	} else if clusterConfig.Order == 0 {
@@ -53,45 +45,22 @@ func (prom *Prometheus) PreflightChecks(clusterConfig *Config, clusterName strin
 	if err != nil {
 		return nil, err
 	}
-	promErrs := []string{}
 	if prom.Install {
 		err := kubeClient.CreateNSIfNotExist()
 		if err != nil {
 			e := fmt.Sprintf("cluster.%s: %s,", clusterName, err)
 			promErrs = append(promErrs, e)
-			return promErrs, nil // don't create secret, if error in creating namespace
+			return promErrs, nil // don't try to create secret, if error in creating namespace
 		}
 	} else {
-		// if update namepsace should exist
+		// check namepsace exist
 		err := kubeClient.CheckNamespaceExist()
 		if err != nil {
 			e := fmt.Sprintf("cluster.%s: %s,", clusterName, err)
 			promErrs = append(promErrs, e)
-			return promErrs, nil // do not try to create secret, if no namespace
+			return promErrs, nil
 		}
-	}
-	found := false
-	for _, v := range clusterConfig.ObjStoreConfigslist {
-		if v.Name == prom.ObjStoreConfig {
-			found = true
-			secretSpec, err := createSecretforObjStore(v.Type, v.Config)
-			if err != nil {
-				return nil, err
-			}
-			err = kubeClient.CreateSecret(secretSpec, prom.ObjStoreConfig) // changes if secret name changed
-
-			if err != nil {
-				e := fmt.Sprintf("cluster.%s: %s,", prom.Name, err)
-				promErrs = append(promErrs, e)
-			}
-			break
-		}
-	}
-	if !found {
-		e := fmt.Sprintf("cluster.%s: Bucket config doesn't exist,", clusterName)
-		promErrs = append(promErrs, e)
-	}
-	if !prom.Install {
+		// check release exist
 		helmClient, err := createHelmClientObject(clusterName, prom.Namespace, false, chartConfiguration)
 		if err != nil {
 			promErrs = append(promErrs, err.Error())
@@ -112,6 +81,27 @@ func (prom *Prometheus) PreflightChecks(clusterConfig *Config, clusterName strin
 			e := fmt.Sprintf("cluster.%s: release %s does't exist", clusterName, prom.Name)
 			promErrs = append(promErrs, e)
 		}
+	}
+	found := false
+	for _, v := range clusterConfig.ObjStoreConfigslist {
+		if v.Name == prom.ObjStoreConfig {
+			found = true
+			secretSpec, err := createSecretforObjStore(v.Type, v.Config)
+			if err != nil {
+				return nil, err
+			}
+			err = kubeClient.CreateSecret(secretSpec, prom.ObjStoreConfig)
+
+			if err != nil {
+				e := fmt.Sprintf("cluster.%s: %s,", prom.Name, err)
+				promErrs = append(promErrs, e)
+			}
+			break
+		}
+	}
+	if !found {
+		e := fmt.Sprintf("cluster.%s: Bucket config doesn't exist,", clusterName)
+		promErrs = append(promErrs, e)
 	}
 	return promErrs, nil
 }

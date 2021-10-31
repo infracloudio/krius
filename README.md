@@ -72,6 +72,7 @@ clusters:
   - name: kind-cluster2
     type: thanos
     data:
+      install: true
       name: kind-thanos
       namespace: monitoring
       objStoreConfig: krius-bucket
@@ -83,6 +84,8 @@ clusters:
       querierFE:
         name: testing
         cacheOption: inMemory
+        config:
+          maxSixe: 1
       receiver:
         name: test
       compactor:
@@ -93,6 +96,7 @@ clusters:
         retentionResolution5m: 30d
         retentionResolution1h: 10y
       ruler:
+        name: ruler
         alertManagers:
           - http://kube-prometheus-alertmanager.monitoring.svc.cluster.local:9093
         config: |-
@@ -103,12 +107,12 @@ clusters:
                   expr: absent(up{prometheus="monitoring/kube-prometheus"})
 objStoreConfigslist:
   - name: krius-bucket
-    type: s3
+    type: S3
     config:
       bucket: name-of-bucket
       endpoint: s3.us-west-2.amazonaws.com
-      accessKey: your-access-key-id
-      secretKey: your-secret-access-key
+      access_key: your-access-key-id
+      secret_key: your-secret-access-key
       insecure: false
     bucketweb:
       enabled: false
@@ -146,4 +150,46 @@ This command will describe the clusters with meta-data details.
 
 ```bash
 $ krius spec describe-cluster --config-file <relative-path/filename>
+```
+
+### Upgrade Krius stack using the spec file
+
+1. To upgrade any cluster component, mark install to false, do the required change in cluster spec and run the spec apply command
+2. To upgrade the object storage for a cluster, mark install to false, update the objStoreConfigslist's config, change the type and run the spec apply command
+
+```
+  data:
+      install: false
+```
+
+```bash
+$ krius spec apply --config-file <relative-path/filename>
+```
+
+for example if you want to upgrade the long-term object storage back-end from AWS S3 to GCP storage buckets
+
+1. update the object storage config
+2. mark cluster.data install to false
+3. run spec apply command
+
+Sample GCS config
+
+```
+type: GCS
+config:
+  bucket: "krius-bucket"
+  service_account: |-
+    {
+      "type": "service_account",
+      "project_id": "project",
+      "private_key_id": "abcdefghijklmnopqrstuvwxyz12345678906666",
+      "private_key": "-----BEGIN PRIVATE KEY-----\...\n-----END PRIVATE KEY-----\n",
+      "client_email": "project@thanos.iam.gserviceaccount.com",
+      "client_id": "123456789012345678901",
+      "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+      "token_uri": "https://oauth2.googleapis.com/token",
+      "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+      "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/thanos%40gitpods.iam.gserviceaccount.com"
+    }
+
 ```

@@ -9,6 +9,8 @@ import (
 
 	"github.com/infracloudio/krius/pkg/helm"
 	kube "github.com/infracloudio/krius/pkg/kubeClient"
+	"github.com/infracloudio/krius/pkg/utils"
+
 	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/cli/values"
@@ -56,7 +58,6 @@ func getPrometheusTargets(clusterName, namespace, promName string) []string {
 	m["app"] = "krius"
 	m["prometheus"] = "sidecar"
 	return kubeClient.GetServiceInfoByLabels(m)
-
 }
 
 func getReceiveEndpoint(clusterName, namespace, specName string) []string {
@@ -94,7 +95,13 @@ func (p Prometheus) createPrometheusReceiverValues(receiveReference []string) *v
 }
 func (thanos Thanos) createThanosValuesMap() (*values.Options, error) {
 	var valueOpts values.Options
-	targets := "{" + strings.Join(thanos.Querier.Targets, ",") + "}"
+	hash := utils.RandStringRunes(10)
+	// default
+	valueOpts.Values = []string{
+		fmt.Sprintf("existingObjstoreSecret=%s", thanos.ObjStoreConfig),
+		fmt.Sprintf("storegateway.enabled=%s", "true")}
+
+	// query config
 	extraFlags := []string{}
 	if thanos.Querier.AutoDownsample {
 		extraFlags = append(extraFlags, "--query.auto-downsampling")
@@ -106,19 +113,17 @@ func (thanos Thanos) createThanosValuesMap() (*values.Options, error) {
 		extraFlags = append(extraFlags, "--query.partial-response")
 	}
 	extraFlagsResult := "{" + strings.Join(extraFlags, ",") + "}"
-	valueOpts.Values = []string{
-		fmt.Sprintf("existingObjstoreSecret=%s", thanos.ObjStoreConfig),
-		fmt.Sprintf("storegateway.enabled=%s", "true"),
-		fmt.Sprintf("query.extraFlags=%s", extraFlagsResult),
-		fmt.Sprintf("queryFrontend.enabled=%s", "true")}
+	valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("query.extraFlags=%s", extraFlagsResult))
 
+	// receive/sidecar config
 	if thanos.Receiver.Name != "" {
 		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("receive.enabled=%s", "true"))
 		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("receive.service.type=%s", "LoadBalancer"))
 	} else {
+		targets := "{" + strings.Join(thanos.Querier.Targets, ",") + "}"
 		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("query.stores=%s", targets))
-
 	}
+
 	// compactor config
 	if thanos.Compactor.Name != "" {
 		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("compactor.enabled=%s", "true"))
@@ -143,6 +148,7 @@ func (thanos Thanos) createThanosValuesMap() (*values.Options, error) {
 		result := "{" + strings.Join(extraFlagsCompactor, ",") + "}"
 		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("compactor.extraFlags=%s", result))
 	}
+	// query frontend config
 	if thanos.Querierfe.Name != "" {
 		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("queryFrontend.enabled=%s", "true"))
 		if thanos.Querierfe.Cacheoption == "in-memory" {
@@ -197,26 +203,32 @@ func (thanos Thanos) createThanosValuesMap() (*values.Options, error) {
 			valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("queryFrontend.extraFlags=%s", memCachedConfResult))
 		}
 	}
+
+	// ruler config
 	if thanos.Ruler.Name != "" {
 		alertmanagers := "{" + strings.Join(thanos.Ruler.Alertmanagers, ",") + "}"
 		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("ruler.enabled=%s", "true"))
 		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("ruler.alertmanagers=%s", alertmanagers))
 		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("ruler.config=%s", thanos.Ruler.Config))
-
 	}
+	// pod annotations for adding secret
+	valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("receive.podAnnotations.secret=%s", "krius-secret-"+hash))
+	valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("compactor.podAnnotations.secret=%s", "krius-secret-"+hash))
+	valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("ruler.podAnnotations.secret=%s", "krius-secret-"+hash))
+	valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("storegateway.podAnnotations.secret=%s", "krius-secret-"+hash))
 	return &valueOpts, nil
 }
 
-func createSecretforObjStore(configType string, bucConfig BucketConfig) (map[string][]byte, error) {
+func createSecretforObjStore(configType string, bucConfig map[string]interface{}) (map[string][]byte, error) {
 	//create a secret for bucket config
-	secretSpec := map[string][]byte{}
 	var obj Objspec
 	obj.ConfigType = configType
-	obj.Config = ObjBucketConfig(bucConfig)
+	obj.Config = bucConfig
 	objYaml, err := yaml.Marshal(obj)
 	if err != nil {
 		return nil, err
 	}
+	secretSpec := map[string][]byte{}
 	secretSpec["objstore.yml"] = objYaml
 	return secretSpec, nil
 }

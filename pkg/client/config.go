@@ -18,7 +18,7 @@ func (g Grafana) GetTypeName() {
 func (t Thanos) GetTypeName() {
 }
 
-func GetConfig(data map[string]interface{}, clusterType string) (ClusterSpec, error) {
+func getConfig(data map[string]interface{}, clusterType string) (ClusterSpec, error) {
 	switch clusterType {
 	case "prometheus":
 		s := Prometheus{}

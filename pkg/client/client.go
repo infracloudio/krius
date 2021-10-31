@@ -25,20 +25,10 @@ type Data map[string]interface{}
 
 // Objstoresonfiglist
 type ObjStoreConfig struct {
-	Bucketweb Bucketweb    `yaml:"bucketweb"`
-	Name      string       `yaml:"name"`
-	Type      string       `yaml:"type"`
-	Config    BucketConfig `yaml:"config"`
-}
-
-// Bucket Config
-type BucketConfig struct {
-	BucketName string `yaml:"bucket"`
-	Endpoint   string `yaml:"endpoint"`
-	AccessKey  string `yaml:"accessKey"`
-	SecretKey  string `yaml:"secretKey"`
-	Insecure   bool   `yaml:"insecure"`
-	Trace      Trace  `yaml:"trace,omitempty"`
+	Bucketweb Bucketweb              `yaml:"bucketweb"`
+	Name      string                 `yaml:"name"`
+	Type      string                 `yaml:"type"`
+	Config    map[string]interface{} `yaml:"config"`
 }
 
 type Trace struct {
