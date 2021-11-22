@@ -48,12 +48,9 @@ func (r *AppRunner) applySpec(cmd *cobra.Command) (err error) {
 		r.log.Error(err)
 		return
 	}
-	preFlightErrors := []string{}
-
 	// check for preflight errors for all the clusters
 	for _, cluster := range config.Clusters {
 		r.status.Start(fmt.Sprintf("Preflight error checking in cluster %s", cluster.Name))
-
 		switch cluster.Type {
 		case "prometheus":
 			pc, err := client.NewPromClient(&cluster)
@@ -67,7 +64,8 @@ func (r *AppRunner) applySpec(cmd *cobra.Command) (err error) {
 				return err
 			}
 			if len(clusterErrors) > 0 {
-				preFlightErrors = append(preFlightErrors, clusterErrors...)
+				r.status.Error(strings.Join(clusterErrors, ", "))
+				return err
 			} else {
 				r.status.Success()
 				r.status.Stop()
@@ -84,7 +82,8 @@ func (r *AppRunner) applySpec(cmd *cobra.Command) (err error) {
 				return err
 			}
 			if len(clusterErrors) > 0 {
-				preFlightErrors = append(preFlightErrors, clusterErrors...)
+				r.status.Error(strings.Join(clusterErrors, ", "))
+				return err
 			} else {
 				r.status.Success()
 				r.status.Stop()
@@ -92,10 +91,6 @@ func (r *AppRunner) applySpec(cmd *cobra.Command) (err error) {
 			}
 		case "grafana":
 		}
-	}
-	if len(preFlightErrors) > 0 {
-		r.status.Error(strings.Join(preFlightErrors, ", "))
-		return
 	}
 
 	// reorder clusters based on sidecar/receiver setup
