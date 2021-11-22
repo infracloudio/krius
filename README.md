@@ -6,7 +6,12 @@
 
 Krius is a cli tool to setup Prometheus, Thanos &amp; friends across multiple clusters easily for scale
 
-# Installation
+## Prerequisites
+
+- Kubernetes 1.16+
+- Helm 3+
+
+## Installation
 
 Currently supported installation is source installation and please follow the steps as follows
 
