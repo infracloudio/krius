@@ -122,7 +122,9 @@ func (t *Thanos) InstallClient(clusterName string, targets []string, debug bool)
 			return "", err
 		}
 	}
-	t.Querier.Targets = targets
+	if len(t.Querier.Targets) == 0 {
+		t.Querier.Targets = targets
+	}
 	values, err := t.createThanosValuesMap()
 
 	if err != nil {

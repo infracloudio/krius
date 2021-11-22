@@ -181,6 +181,14 @@ var RuleSchema = `
 						"type": "string"
 					  },
 					  "mode": { "enum": ["sidecar", "receiver"] },
+					  "remoteWriteURL": {
+						  "type": "array",
+						  "items": [
+							{
+							  "type": "string"
+							}
+						  ]
+					  },
 					  "receiveReference": {
 						"type": "string"
 					  },
