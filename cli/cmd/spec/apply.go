@@ -66,10 +66,10 @@ func (r *AppRunner) applySpec(cmd *cobra.Command) (err error) {
 			if len(clusterErrors) > 0 {
 				r.status.Error(strings.Join(clusterErrors, ", "))
 				return err
-			} else {
-				r.status.Success()
-				r.status.Stop()
 			}
+			r.status.Success()
+			r.status.Stop()
+
 		case "thanos":
 			tc, err := client.NewThanosClient(&cluster)
 			if err != nil {
@@ -84,11 +84,9 @@ func (r *AppRunner) applySpec(cmd *cobra.Command) (err error) {
 			if len(clusterErrors) > 0 {
 				r.status.Error(strings.Join(clusterErrors, ", "))
 				return err
-			} else {
-				r.status.Success()
-				r.status.Stop()
-
 			}
+			r.status.Success()
+			r.status.Stop()
 		case "grafana":
 		}
 	}
