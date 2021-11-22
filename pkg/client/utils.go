@@ -83,13 +83,13 @@ func (p Prometheus) createPrometheusSidecarValues() *values.Options {
 	return &valueOpts
 }
 
-func (p Prometheus) createPrometheusReceiverValues(receiveReference []string) *values.Options {
+func (p Prometheus) createPrometheusReceiverValues() *values.Options {
 	var valueOpts values.Options
 
 	valueOpts.Values = append(valueOpts.Values,
 		fmt.Sprintf("commonLabels.replica=%s", p.Name))
-	if len(receiveReference) > 0 && receiveReference[0] != "" {
-		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("prometheus.prometheusSpec.remoteWrite[0].url=http://%s:19291/api/v1/receive", receiveReference[0]))
+	if len(p.RemoteWriteURL) > 0 && p.RemoteWriteURL[0] != "" {
+		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("prometheus.prometheusSpec.remoteWrite[0].url=http://%s:19291/api/v1/receive", p.RemoteWriteURL[0]))
 	}
 	return &valueOpts
 }
@@ -114,7 +114,6 @@ func (thanos Thanos) createThanosValuesMap() (*values.Options, error) {
 	}
 	extraFlagsResult := "{" + strings.Join(extraFlags, ",") + "}"
 	valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("query.extraFlags=%s", extraFlagsResult))
-
 	// receive/sidecar config
 	if thanos.Receiver.Name != "" {
 		valueOpts.Values = append(valueOpts.Values, fmt.Sprintf("receive.enabled=%s", "true"))

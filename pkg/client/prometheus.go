@@ -124,7 +124,6 @@ func (prom *Prometheus) InstallClient(clusterName string, receiveEndpoint []stri
 			return "", err
 		}
 	}
-
 	if prom.Install {
 		if prom.Mode == "sidecar" {
 			Values := prom.createPrometheusSidecarValues()
@@ -139,7 +138,10 @@ func (prom *Prometheus) InstallClient(clusterName string, receiveEndpoint []stri
 			return "", errors.New("error getting sidecar target info")
 
 		}
-		Values := prom.createPrometheusReceiverValues(receiveEndpoint)
+		if len(prom.RemoteWriteURL) == 0 {
+			prom.RemoteWriteURL = receiveEndpoint
+		}
+		Values := prom.createPrometheusReceiverValues()
 		_, err = helmClient.InstallChart(Values)
 		if err != nil {
 			return "", err
@@ -159,7 +161,10 @@ func (prom *Prometheus) InstallClient(clusterName string, receiveEndpoint []stri
 			}
 			return "", errors.New("error getting sidecar target info")
 		}
-		Values := prom.createPrometheusReceiverValues(receiveEndpoint)
+		if len(prom.RemoteWriteURL) == 0 {
+			prom.RemoteWriteURL = receiveEndpoint
+		}
+		Values := prom.createPrometheusReceiverValues()
 		_, err = helmClient.UpgradeChart(Values)
 		if err != nil {
 			return "", err

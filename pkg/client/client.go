@@ -37,12 +37,13 @@ type Trace struct {
 
 // Prometheus
 type Prometheus struct {
-	Install          bool   `yaml:"install"`
-	Name             string `yaml:"name"`
-	Namespace        string `yaml:"namespace"`
-	Mode             string `yaml:"mode"`
-	ReceiveReference string `yaml:"receiveReference"`
-	ObjStoreConfig   string `yaml:"objStoreConfig"`
+	Install          bool     `yaml:"install"`
+	Name             string   `yaml:"name"`
+	Namespace        string   `yaml:"namespace"`
+	Mode             string   `yaml:"mode"`
+	ReceiveReference string   `yaml:"receiveReference"`
+	RemoteWriteURL   []string `yaml:"remoteWriteURL"`
+	ObjStoreConfig   string   `yaml:"objStoreConfig"`
 }
 
 // Thanos

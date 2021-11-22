@@ -48,12 +48,9 @@ func (r *AppRunner) applySpec(cmd *cobra.Command) (err error) {
 		r.log.Error(err)
 		return
 	}
-	preFlightErrors := []string{}
-
 	// check for preflight errors for all the clusters
 	for _, cluster := range config.Clusters {
 		r.status.Start(fmt.Sprintf("Preflight error checking in cluster %s", cluster.Name))
-
 		switch cluster.Type {
 		case "prometheus":
 			pc, err := client.NewPromClient(&cluster)
@@ -67,11 +64,12 @@ func (r *AppRunner) applySpec(cmd *cobra.Command) (err error) {
 				return err
 			}
 			if len(clusterErrors) > 0 {
-				preFlightErrors = append(preFlightErrors, clusterErrors...)
-			} else {
-				r.status.Success()
-				r.status.Stop()
+				r.status.Error(strings.Join(clusterErrors, ", "))
+				return err
 			}
+			r.status.Success()
+			r.status.Stop()
+
 		case "thanos":
 			tc, err := client.NewThanosClient(&cluster)
 			if err != nil {
@@ -84,18 +82,13 @@ func (r *AppRunner) applySpec(cmd *cobra.Command) (err error) {
 				return err
 			}
 			if len(clusterErrors) > 0 {
-				preFlightErrors = append(preFlightErrors, clusterErrors...)
-			} else {
-				r.status.Success()
-				r.status.Stop()
-
+				r.status.Error(strings.Join(clusterErrors, ", "))
+				return err
 			}
+			r.status.Success()
+			r.status.Stop()
 		case "grafana":
 		}
-	}
-	if len(preFlightErrors) > 0 {
-		r.status.Error(strings.Join(preFlightErrors, ", "))
-		return
 	}
 
 	// reorder clusters based on sidecar/receiver setup
