@@ -13,7 +13,11 @@ Krius is a cli tool to setup Prometheus, Thanos &amp; friends across multiple cl
 
 ## Installation
 
-Currently supported installation is source installation and please follow the steps as follows
+## Install the pre-compiled binary
+
+```bash
+curl -Lsf https://raw.githubusercontent.com/infracloudio/krius/main/install.sh | bash
+```
 
 ## Compiling from source
 
