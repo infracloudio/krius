@@ -50,7 +50,7 @@ func (r *AppRunner) applySpec(cmd *cobra.Command) (err error) {
 	}
 	// check for preflight errors for all the clusters
 	for _, cluster := range config.Clusters {
-		r.status.Start(fmt.Sprintf("Preflight error checking in cluster %s", cluster.Name))
+		r.status.Start(fmt.Sprintf("Preflight error checks in cluster %s", cluster.Name))
 		switch cluster.Type {
 		case "prometheus":
 			pc, err := client.NewPromClient(&cluster)
