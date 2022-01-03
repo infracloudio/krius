@@ -87,12 +87,12 @@ func createConfigYAML(cmd *cobra.Command, args []string) {
 	cluster1 := client.Cluster{}
 	cluster1.Name = "prometheus"
 	cluster1.Type = "prometheus"
-	cluster1.Data = map[string]interface{}{"install": true, "name": "Prometheus", "namespace": "default", "mode": mode, "objStoreConfig": defaultObjectStorageConfigName}
+	cluster1.Data = map[string]interface{}{"install": true, "name": "prometheus", "namespace": "default", "mode": mode, "objStoreConfig": defaultObjectStorageConfigName}
 
 	cluster2 := client.Cluster{}
 	cluster2.Name = "thanos"
 	cluster2.Type = "thanos"
-	cluster2.Data = map[string]interface{}{"install": true, "name": "Thanos", "namespace": "default", "querier": querier, "querierFE": querierfe, "compactor": compactor, "ruler": ruler, "objStoreConfig": defaultObjectStorageConfigName}
+	cluster2.Data = map[string]interface{}{"install": true, "name": "thanos", "namespace": "default", "querier": querier, "querierFE": querierfe, "compactor": compactor, "ruler": ruler, "objStoreConfig": defaultObjectStorageConfigName}
 
 	if mode == "receiver" {
 		cluster2.Data["receiver"] = receiver
