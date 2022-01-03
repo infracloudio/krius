@@ -1,7 +1,6 @@
 package spec
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/infracloudio/krius/cli/cmd"
@@ -11,9 +10,7 @@ import (
 var specCmd = &cobra.Command{
 	Use:   "spec",
 	Short: "Profile to be created",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("spec called")
-	},
+	Args:  cobra.MinimumNArgs(1),
 }
 
 var applyCmd = &cobra.Command{
