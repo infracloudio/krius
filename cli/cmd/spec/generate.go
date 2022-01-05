@@ -108,7 +108,7 @@ func createConfigYAML(cmd *cobra.Command, args []string) {
 
 	objstore := client.ObjStoreConfig{}
 	objstore.Name = defaultObjectStorageConfigName
-	objstore.Type = "s3"
+	objstore.Type = "S3"
 	objstore.Bucketweb = bucketweb
 	objstore.Config = buckerconfig
 
