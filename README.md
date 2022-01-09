@@ -145,6 +145,8 @@ This command will validate the spec file passed as config-file and apply the con
 $ krius spec apply --config-file <relative-path/filename>
 ```
 
+![](./images/spec-apply.gif)
+
 ### Uninstall Krius stack using the spec file
 
 This command will deletes the entire stack across clusters.
@@ -152,6 +154,8 @@ This command will deletes the entire stack across clusters.
 ```bash
 $ krius spec uninstall --config-file <relative-path/filename>
 ```
+
+![](./images/spec-destroy.gif)
 
 ### Describe Krius Stack using the spec file[WIP]
 
