@@ -1,5 +1,27 @@
 # Changelog
 
+## [v0.0.1](https://github.com/infracloudio/krius/tree/v0.0.1) (2022-01-16)
+
+[Full Changelog](https://github.com/infracloudio/krius/compare/v0.0.1...v0.0.1)
+
+**Closed issues:**
+
+- Support Azure Storage Account as object storage client. [\#41](https://github.com/infracloudio/krius/issues/41)
+- Support Google Cloud Storage as object storage client. [\#40](https://github.com/infracloudio/krius/issues/40)
+- MultiCluster: Implement `krius spec destroy` deletes the entire stack across clusters [\#11](https://github.com/infracloudio/krius/issues/11)
+- MultiCluster: Implement `krius spec generate` to genereate a profile based on questions asked to user [\#10](https://github.com/infracloudio/krius/issues/10)
+- MultiCluster: Implement `krius spec apply` so that the given profile file should be applies/updates [\#6](https://github.com/infracloudio/krius/issues/6)
+- SingleCluster: Install thanos receiver from bitnami/thanos chart when `krius install thanos receiver` command is given  [\#5](https://github.com/infracloudio/krius/issues/5)
+- SingleCluster: Install thanos sidecar from bitnami/thanos chart when `krius install thanos sidecar` command is given [\#4](https://github.com/infracloudio/krius/issues/4)
+
+**Merged pull requests:**
+
+- Added spec apply/destroy giffy [\#78](https://github.com/infracloudio/krius/pull/78) ([YachikaRalhan](https://github.com/YachikaRalhan))
+- Capitalise obj store name [\#76](https://github.com/infracloudio/krius/pull/76) ([YachikaRalhan](https://github.com/YachikaRalhan))
+- Show spec usage when called [\#75](https://github.com/infracloudio/krius/pull/75) ([YachikaRalhan](https://github.com/YachikaRalhan))
+- Change helm release names to lowercase [\#74](https://github.com/infracloudio/krius/pull/74) ([hr1sh1kesh](https://github.com/hr1sh1kesh))
+- Added installation script [\#73](https://github.com/infracloudio/krius/pull/73) ([YachikaRalhan](https://github.com/YachikaRalhan))
+
 ## [v0.0.1](https://github.com/infracloudio/krius/tree/v0.0.1) (2021-11-22)
 
 [Full Changelog](https://github.com/infracloudio/krius/compare/241d8b7f8c9e4e6a43ee8663932e9a06a03d2751...v0.0.1)
