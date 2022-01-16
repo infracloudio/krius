@@ -1,8 +1,8 @@
 # Changelog
 
-## [v0.0.1](https://github.com/infracloudio/krius/tree/v0.0.1) (2022-01-16)
+## [v0.0.2](https://github.com/infracloudio/krius/tree/v0.0.2) (2022-01-16)
 
-[Full Changelog](https://github.com/infracloudio/krius/compare/v0.0.1...v0.0.1)
+[Full Changelog](https://github.com/infracloudio/krius/compare/v0.0.1...v0.0.2)
 
 **Closed issues:**
 
