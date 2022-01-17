@@ -2,9 +2,9 @@
   <img alt="krius" src="./images/krius-02.svg" width="250" height="250">
 </p>
 
-# krius
+# Krius
 
-Krius is a cli tool to setup Prometheus, Thanos &amp; friends across multiple clusters easily for scale
+Krius is a cli tool to setup and manage Prometheus, Thanos &amp; friends across multiple clusters easily for scale
 
 ## Prerequisites
 
