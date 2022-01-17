@@ -206,3 +206,7 @@ config:
     }
 
 ```
+
+## Contributing
+
+Contributions are welcome, please [read the guidelines](CONTRIBUTING.md)
