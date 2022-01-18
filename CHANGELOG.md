@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.1.0](https://github.com/infracloudio/krius/tree/v0.1.0) (2022-01-18)
+
+[Full Changelog](https://github.com/infracloudio/krius/compare/v0.0.2...v0.1.0)
+
+**Merged pull requests:**
+
+- feat: Added badges Go Report Card, License, workflow [\#80](https://github.com/infracloudio/krius/pull/80) ([JESWINKNINAN](https://github.com/JESWINKNINAN))
+- capitalize k in krius\(project name\) [\#79](https://github.com/infracloudio/krius/pull/79) ([YachikaRalhan](https://github.com/YachikaRalhan))
+
 ## [v0.0.2](https://github.com/infracloudio/krius/tree/v0.0.2) (2022-01-16)
 
 [Full Changelog](https://github.com/infracloudio/krius/compare/v0.0.1...v0.0.2)
