@@ -98,8 +98,8 @@ install_krius()
 	krius_file="krius_${krius_os}_${krius_arch}${krius_arm}${krius_dl_ext}"
 	if [[ "$#" -eq 0 ]]; then
 		# get latest release
-		krius_tag="v0.0.1"
-		krius_version="v0.0.1"
+		krius_tag="v0.1.0"
+		krius_version="0.1.0"
 	elif [[ "$#" -gt 1 ]]; then
 		echo "Too many arguments."
 		exit 1
@@ -112,7 +112,6 @@ install_krius()
 	krius_url="https://github.com/infracloudio/krius/releases/download/${krius_tag}/krius_${krius_version}_${krius_os}_${krius_arch}${krius_arm}.tar.gz"
 	dl="/tmp/$krius_file"
 	rm -rf -- "$dl"
-
 	curl -fsSL "$krius_url" -o "$dl"
 	echo "Extracting..." 
 	case "$krius_file" in
