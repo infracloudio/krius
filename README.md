@@ -2,15 +2,7 @@
   <img alt="krius" src="./images/krius-02.svg" width="250" height="250">
 </p>
 
-![Go Report Card](https://goreportcard.com/badge/github.com/JESWINKNINAN/kube-anchor)  
-
-![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
-
-![workflow](https://github.com/infracloudio/krius/actions/workflows/workflow.yaml/badge.svg)
-
-![contributors](https://img.shields.io/github/contributors/badges/shields)
-
-![version](https://img.shields.io/badge/version-1.2.3-blue)
+![Go Report Card](https://goreportcard.com/badge/github.com/JESWINKNINAN/kube-anchor)  ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg) ![workflow](https://github.com/infracloudio/krius/actions/workflows/workflow.yaml/badge.svg) ![contributors](https://img.shields.io/github/contributors/badges/shields) ![version](https://img.shields.io/badge/version-1.2.3-blue)
 
 # Krius
 
