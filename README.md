@@ -2,6 +2,13 @@
   <img alt="krius" src="./images/krius-02.svg" width="250" height="250">
 </p>
 
+![Go Report Card](https://goreportcard.com/badge/github.com/JESWINKNINAN/kube-anchor)  
+
+![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
+
+![workflow](https://github.com/infracloudio/krius/actions/workflows/workflow.yaml/badge.svg)
+
+
 # Krius
 
 Krius is a cli tool to setup and manage Prometheus, Thanos &amp; friends across multiple clusters easily for scale
