@@ -8,6 +8,9 @@
 
 ![workflow](https://github.com/infracloudio/krius/actions/workflows/workflow.yaml/badge.svg)
 
+![contributors](https://img.shields.io/github/contributors/badges/shields)
+
+![version](https://img.shields.io/badge/version-1.2.3-blue)
 
 # Krius
 
