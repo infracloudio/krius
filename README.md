@@ -2,7 +2,7 @@
   <img alt="krius" src="./images/krius-02.svg" width="250" height="250">
 </p>
 
-![Go Report Card](https://goreportcard.com/badge/github.com/infracloudio/krius)  ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg) ![workflow](https://github.com/infracloudio/krius/actions/workflows/workflow.yaml/badge.svg)
+![Go Report Card](https://goreportcard.com/report/github.com/infracloudio/krius)  ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg) ![workflow](https://github.com/infracloudio/krius/actions/workflows/workflow.yaml/badge.svg)
 
 
 
