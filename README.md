@@ -130,7 +130,7 @@ objStoreConfigslist:
 
 ```
 
-- clusters: a list of kubernetes clusters to setup promethues or thanos
+- clusters: a list of kubernetes clusters to setup prometheus or thanos
   - name: Kubernetes context name
   - type: Name of setup Prometheus or Thanos
   - data: Config for the setup type
