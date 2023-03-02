@@ -230,8 +230,7 @@ var RuleSchema = `
 				  "secretKey": {
 					"type": "string"
 				  }
-				},
-				"required": ["bucket"]
+				}
 			  },
 			  "bucketweb": {
 				"type": "object",
