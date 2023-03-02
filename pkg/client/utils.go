@@ -72,8 +72,7 @@ func (p Prometheus) createPrometheusSidecarValues() *values.Options {
 	var valueOpts values.Options
 	valueOpts.Values = []string{
 		fmt.Sprintf("commonLabels.replica=%s", p.Name),
-		fmt.Sprintf("prometheus.prometheusSpec.thanos.image=%s", "thanosio/thanos:v0.21.0-rc.0"),
-		fmt.Sprintf("prometheus.prometheusSpec.thanos.sha=%s", "dbf064aadd18cc9e545c678f08800b01a921cf6817f4f02d5e2f14f221bee17c"),
+		fmt.Sprintf("prometheus.prometheusSpec.thanos.image=%s", "quay.io/thanos/thanos:v0.28.1"),
 		fmt.Sprintf("prometheus.thanosService.enabled=%s", "true"),
 		fmt.Sprintf("prometheus.thanosServiceExternal.enabled=%s", "true"),
 		fmt.Sprintf("prometheus.thanosServiceExternal.labels.app=%s", "krius"),
